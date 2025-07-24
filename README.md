@@ -1,22 +1,61 @@
 # GovSecure AI Platform
 
-**Advanced AI-Powered Government Operations Platform**
+**Advanced AI-Powered Government Operations Platform with Latest OpenAI Models**
 
-A comprehensive artificial intelligence platform designed specifically for US government agencies, providing secure, compliant, and efficient solutions for citizen services, document analysis, compliance management, and emergency response coordination.
+A comprehensive artificial intelligence platform designed specifically for US government agencies, providing secure, compliant, and efficient solutions for citizen services, document analysis, compliance management, and emergency response coordination. Now featuring complete support for all latest OpenAI models including GPT-4.1, o-series reasoning models, and DSPy integration for compound AI systems.
 
 ## Overview
 
-The GovSecure AI Platform leverages cutting-edge OpenAI technology to deliver intelligent automation for government operations while maintaining the highest security standards required for federal environments. Built with FedRAMP compliance in mind and designed for IL5 compatibility.
+The GovSecure AI Platform leverages cutting-edge OpenAI technology including the latest GPT-4.1, o3 reasoning models, and audio-capable models to deliver intelligent automation for government operations while maintaining the highest security standards required for federal environments. Built with FedRAMP compliance in mind and designed for IL5 compatibility.
+
+## Latest AI Model Support
+
+### Flagship Chat Models
+- **GPT-4.1**: Latest flagship model for complex government tasks
+- **GPT-4o**: Fast, intelligent, flexible model for general operations
+- **GPT-4o Audio**: Audio-capable model for voice interfaces
+- **ChatGPT-4o Latest**: Production-ready chat model
+
+### Reasoning Models (o-series)
+- **o3**: Most powerful reasoning model for complex analysis
+- **o3-pro**: Enhanced compute version for critical decisions
+- **o4-mini**: Faster, affordable reasoning model
+- **o3-mini**: Small reasoning model for routine tasks
+- **o1 Series**: Legacy reasoning models for established workflows
+
+### Cost-Optimized Models
+- **GPT-4.1 mini**: Balanced intelligence, speed, and cost
+- **GPT-4.1 nano**: Fastest, most cost-effective model
+- **GPT-4o mini**: Affordable model for focused tasks
+- **GPT-4o mini Audio**: Cost-effective audio processing
+
+### DSPy Compound AI System
+- **Structured Reasoning**: Chain-of-thought processing for complex tasks
+- **Multi-Step Analysis**: Advanced analytical workflows
+- **Policy Analysis**: Comprehensive policy interpretation
+- **Risk Assessment**: Multi-factor risk evaluation
+- **Document Synthesis**: Information synthesis from multiple sources
+- **Compliance Reasoning**: Advanced compliance analysis
 
 ## Key Features
 
 ### Core Capabilities
-- **Intelligent Chat Assistant**: Multi-modal AI assistant specialized in government operations
+- **Intelligent Chat Assistant**: Multi-modal AI assistant with latest models
 - **Document Analysis**: Advanced document processing with compliance checking
-- **Multilingual Translation**: Real-time translation for citizen services
+- **Multilingual Translation**: Real-time translation with audio support
 - **Compliance Automation**: Automated NIST 800-53, FedRAMP, and FISMA compliance scanning
 - **Emergency Response**: AI-powered incident coordination and response management
 - **Citizen Service Portal**: Streamlined citizen request processing and service delivery
+- **Audio Processing**: Voice interfaces and audio transcription capabilities
+- **Reasoning Engine**: Complex multi-step reasoning with DSPy integration
+
+### Advanced AI Features
+- **Model Selection**: Automatic model selection based on task requirements
+- **Reasoning Chains**: Structured reasoning with step-by-step analysis
+- **Audio Capabilities**: Voice input/output with latest audio models
+- **Cost Optimization**: Intelligent model routing for cost efficiency
+- **Compound AI**: DSPy-powered multi-agent reasoning systems
+- **Context Awareness**: Advanced context understanding across conversations
 
 ### Security & Compliance
 - **FedRAMP High Baseline**: Designed for high-impact government systems
@@ -32,13 +71,13 @@ The GovSecure AI Platform leverages cutting-edge OpenAI technology to deliver in
 - **Scalable Architecture**: Microservices-based design for horizontal scaling
 - **API-First Design**: RESTful APIs with comprehensive documentation
 - **Real-time Processing**: WebSocket support for live updates
-- **Comprehensive Testing**: 100+ test cases with 90%+ code coverage
+- **Comprehensive Testing**: 100+ test cases with enhanced coverage
 
 ## Quick Start
 
 ### Prerequisites
 - Python 3.9 or higher
-- OpenAI API key (GPT-4 recommended)
+- OpenAI API key with access to latest models
 - PostgreSQL database (optional, SQLite for development)
 - Redis for caching (optional)
 
@@ -58,7 +97,7 @@ The GovSecure AI Platform leverages cutting-edge OpenAI technology to deliver in
 3. **Environment Configuration**
    ```bash
    cp env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your OpenAI API key and configuration
    ```
 
 4. **Initialize Database**
@@ -68,287 +107,259 @@ The GovSecure AI Platform leverages cutting-edge OpenAI technology to deliver in
 
 5. **Run the Application**
    ```bash
-   # CLI Interface
+   # CLI Interface with latest models
    python cli.py start
    
-   # Web API
+   # Web API with full model support
    python cli.py web
    
-   # Quick Compliance Scan
+   # Quick Compliance Scan with reasoning models
    python cli.py scan
    ```
 
+## Model Configuration
+
+### Environment Variables
+```bash
+# OpenAI Configuration
+OPENAI_API_KEY=your-api-key-here
+OPENAI_ORGANIZATION=your-org-id
+
+# Model Selection
+OPENAI_DEFAULT_MODEL=gpt-4.1
+OPENAI_REASONING_MODEL=o3
+OPENAI_COST_OPTIMIZED_MODEL=gpt-4.1-mini
+OPENAI_AUDIO_MODEL=gpt-4o-audio-preview
+```
+
+### Model Selection API
+```python
+from backend.core.config import get_config
+
+config = get_config()
+
+# Get reasoning models
+reasoning_models = config.openai.get_reasoning_models()
+
+# Get audio models
+audio_models = config.openai.get_audio_models()
+
+# Get model for specific use case
+best_model = config.openai.get_model_for_use_case("compliance")
+```
+
 ## Usage Examples
+
+### DSPy Compound AI System
+
+**Compliance Analysis with Reasoning**
+```python
+from backend.ai_agents.dspy_integration import get_dspy_orchestrator
+
+orchestrator = get_dspy_orchestrator()
+
+# Advanced compliance reasoning
+result = await orchestrator.compliance_analysis(
+    context="Government system with sensitive data",
+    regulation="NIST 800-53 AC-2 requirements"
+)
+
+print(f"Analysis: {result.result}")
+print(f"Reasoning Steps: {result.reasoning_steps}")
+```
+
+**Multi-Step Policy Analysis**
+```python
+# Complex policy analysis
+result = await orchestrator.analyze_policy(
+    policy_text="New data privacy regulation text...",
+    context="Federal agency implementation"
+)
+
+print(f"Key Points: {result.result['key_points']}")
+print(f"Implications: {result.result['implications']}")
+```
+
+**Document Synthesis**
+```python
+# Synthesize multiple documents
+documents = [
+    "Policy document 1 content...",
+    "Regulation document 2 content...",
+    "Guidelines document 3 content..."
+]
+
+result = await orchestrator.synthesize_documents(
+    documents=documents,
+    query="What are the key compliance requirements?"
+)
+
+print(f"Synthesis: {result.result['synthesis']}")
+print(f"Conflicts: {result.result['conflicts']}")
+```
 
 ### Command Line Interface
 
-**Interactive Government Assistant**
+**Interactive Government Assistant with Latest Models**
 ```bash
 python cli.py start
-# Follow the interactive prompts for full platform access
+# Access to GPT-4.1, o3 reasoning, and audio models
 ```
 
-**Quick Compliance Scan**
+**Model-Specific Chat**
 ```bash
-python cli.py scan
-# Performs rapid NIST 800-53 compliance assessment
-```
+# Use reasoning model for complex analysis
+python cli.py chat "Analyze FISMA compliance requirements" --model o3
 
-**AI Chat Assistant**
-```bash
-python cli.py chat "How do I process a FOIA request?"
-# Get instant AI-powered government assistance
+# Use audio model for voice processing
+python cli.py chat "Process this audio input" --model gpt-4o-audio-preview
+
+# Use cost-optimized model for routine tasks
+python cli.py chat "Simple question" --model gpt-4.1-nano
 ```
 
 ### Web API Usage
 
-**Health Check**
+**Model Selection Endpoint**
 ```bash
-curl http://localhost:8000/health
+curl -X GET "http://localhost:8000/ai/models"
+# Returns available models and capabilities
 ```
 
-**AI Chat Endpoint**
+**Advanced Chat with Model Selection**
 ```bash
 curl -X POST "http://localhost:8000/ai/chat" \
   -H "Content-Type: application/json" \
-  -d '{"message": "What are the requirements for FedRAMP certification?", "mode": "compliance"}'
+  -d '{
+    "message": "Analyze this complex policy document",
+    "mode": "compliance",
+    "model": "o3",
+    "use_reasoning": true
+  }'
 ```
 
-**Document Analysis**
+**DSPy Reasoning Endpoint**
 ```bash
-curl -X POST "http://localhost:8000/ai/analyze-document" \
+curl -X POST "http://localhost:8000/ai/dspy/analyze" \
   -H "Content-Type: application/json" \
-  -d '{"content": "Policy document text...", "analysis_type": "compliance"}'
-```
-
-**Compliance Scan**
-```bash
-curl -X POST "http://localhost:8000/compliance/scan" \
-  -H "Content-Type: application/json" \
-  -d '{"scan_type": "quick", "target": "system"}'
+  -d '{
+    "task_type": "compliance_reasoning",
+    "input_data": {
+      "context": "Government system",
+      "regulation": "NIST 800-53"
+    },
+    "model": "o3-pro"
+  }'
 ```
 
 ## Architecture
 
-### System Components
+### AI Model Management
+- **Model Router**: Intelligent routing based on task complexity
+- **Cost Optimizer**: Automatic selection of cost-effective models
+- **Capability Matcher**: Match models to required capabilities
+- **Performance Monitor**: Track model performance and costs
 
-**Backend Services**
-- **AI Agents**: Specialized AI assistants for different government functions
-- **Compliance Engine**: Automated compliance scanning and assessment
-- **Authentication System**: Multi-factor authentication with RBAC
-- **Document Processor**: Advanced document analysis and extraction
-- **System Monitor**: Real-time health and performance monitoring
+### DSPy Integration Layer
+- **Reasoning Modules**: Structured reasoning components
+- **Chain-of-Thought**: Multi-step analytical processes
+- **Task Orchestrator**: Coordinate complex AI workflows
+- **Result Synthesis**: Combine outputs from multiple models
 
-**API Layer**
-- **RESTful API**: Comprehensive REST endpoints for all functionality
-- **WebSocket Support**: Real-time communication for live updates
-- **Authentication**: JWT-based authentication with refresh tokens
-- **Rate Limiting**: Configurable rate limits for API protection
-- **CORS Support**: Cross-origin resource sharing configuration
-
-**Data Layer**
-- **PostgreSQL**: Primary database for structured data
-- **SQLite**: Development and testing database
-- **Redis**: Caching and session management
-- **File Storage**: Secure document and file management
-- **Audit Logging**: Comprehensive audit trail for all operations
-
-### Security Architecture
-
-**Authentication & Authorization**
-- Multi-factor authentication (MFA)
-- Role-based access control (RBAC)
-- Session management with secure tokens
-- API key management for service accounts
-- Integration with government identity providers
-
-**Data Protection**
-- Encryption at rest and in transit
-- Secure key management
-- Data classification and handling
-- Privacy controls and data minimization
-- Audit logging for all data access
-
-**Network Security**
-- TLS 1.3 encryption for all communications
-- Network segmentation and isolation
-- Intrusion detection and prevention
-- DDoS protection and mitigation
-- Secure API gateway configuration
+### Audio Processing Pipeline
+- **Speech Recognition**: Convert audio to text
+- **Audio Generation**: Text-to-speech capabilities
+- **Multi-language Support**: Audio processing in multiple languages
+- **Real-time Processing**: Live audio stream processing
 
 ## Government Use Cases
 
-### Federal Agencies
-- **Department of Homeland Security**: Emergency response coordination
-- **General Services Administration**: Citizen service automation
-- **Office of Management and Budget**: Compliance reporting automation
-- **Department of Defense**: Document classification and analysis
-- **Department of Justice**: Legal document processing and analysis
+### Enhanced with Latest Models
 
-### State and Local Government
-- **State IT Departments**: Multi-agency compliance management
-- **City Services**: 311 service request automation
-- **Emergency Management**: Incident response coordination
-- **Public Works**: Citizen complaint processing
-- **Administrative Services**: Document workflow automation
+**Complex Policy Analysis (GPT-4.1 + o3)**
+- Multi-document policy synthesis
+- Regulatory impact assessment
+- Stakeholder analysis with reasoning chains
 
-### Specific Applications
-- **FOIA Request Processing**: Automated Freedom of Information Act request handling
-- **Regulatory Compliance**: Continuous compliance monitoring and reporting
-- **Citizen Service Portal**: Unified citizen service request system
-- **Emergency Response**: AI-powered emergency incident coordination
-- **Document Classification**: Automated document security classification
-- **Translation Services**: Multi-language citizen service support
+**Emergency Response (o3 + Audio Models)**
+- Real-time incident analysis with reasoning
+- Voice-activated emergency protocols
+- Multi-step crisis response planning
 
-## Compliance Frameworks
+**Compliance Automation (o3-pro + DSPy)**
+- Advanced compliance reasoning
+- Gap analysis with structured thinking
+- Automated remediation planning
 
-### Supported Standards
-- **NIST 800-53**: National Institute of Standards and Technology security controls
-- **FedRAMP**: Federal Risk and Authorization Management Program
-- **FISMA**: Federal Information Security Management Act
-- **CJIS**: Criminal Justice Information Services Security Policy
-- **HIPAA**: Health Insurance Portability and Accountability Act (healthcare modules)
-- **SOC 2**: Service Organization Control 2 (Type II)
+**Citizen Services (GPT-4.1 + Audio)**
+- Multilingual voice interfaces
+- Complex benefit eligibility analysis
+- Personalized service recommendations
 
-### Compliance Features
-- **Automated Scanning**: Continuous compliance monitoring
-- **Gap Analysis**: Identification of compliance gaps and remediation guidance
-- **Reporting**: Comprehensive compliance reports and dashboards
-- **Control Assessment**: Automated security control effectiveness assessment
-- **Risk Management**: Integrated risk assessment and mitigation planning
-- **Audit Support**: Detailed audit trails and evidence collection
+## Testing and Quality Assurance
 
-## Testing
-
-### Test Suite
-The platform includes comprehensive testing with 100+ test cases covering:
-
-- **Unit Tests**: Individual component testing
-- **Integration Tests**: Cross-component functionality testing
-- **API Tests**: Complete API endpoint testing
-- **Security Tests**: Authentication and authorization testing
-- **Performance Tests**: Load and stress testing
-- **Compliance Tests**: Regulatory requirement validation
-
-### Running Tests
+### Model Testing
 ```bash
-# Run all tests
-python -m pytest tests/ -v
+# Test all model integrations
+python -m pytest tests/test_models/ -v
 
-# Run with coverage
-python -m pytest tests/ --cov=backend --cov-report=html
+# Test DSPy integration
+python -m pytest tests/test_dspy/ -v
 
-# Run specific test categories
-python -m pytest tests/test_api.py -v
-python -m pytest tests/test_cli.py -v
-python -m pytest tests/test_enhanced_coverage.py -v
+# Test audio capabilities
+python -m pytest tests/test_audio/ -v
 ```
 
-### Test Coverage
-- **Overall Coverage**: 90%+ code coverage
-- **Critical Path Coverage**: 100% coverage for security-critical functions
-- **API Coverage**: Complete endpoint testing
-- **Error Handling**: Comprehensive error scenario testing
-
-## Development
-
-### Development Setup
+### Performance Testing
 ```bash
-# Install development dependencies
-pip install -r requirements.txt
+# Model performance benchmarks
+python scripts/benchmark_models.py
 
-# Install pre-commit hooks
-pre-commit install
+# Cost analysis
+python scripts/analyze_costs.py
 
-# Run linting
-black . && flake8 . && isort .
-
-# Run security checks
-bandit -r backend/ && safety check
+# Reasoning quality tests
+python scripts/test_reasoning.py
 ```
-
-### Code Quality Standards
-- **PEP 8**: Python code style compliance
-- **Type Hints**: Comprehensive type annotation
-- **Documentation**: Docstring coverage for all public APIs
-- **Security**: Static analysis with bandit and safety
-- **Testing**: Minimum 90% code coverage requirement
-
-### Contributing
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## Deployment
 
-### Production Deployment
-```bash
-# Using Docker
-docker build -t govsecure-ai .
-docker run -d -p 8000:8000 govsecure-ai
-
-# Using systemd
-sudo systemctl enable govsecure-ai
-sudo systemctl start govsecure-ai
-
-# Using Kubernetes
-kubectl apply -f k8s/
+### Production Configuration
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  govsecure-ai:
+    image: govsecure-ai:latest
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_DEFAULT_MODEL=gpt-4.1
+      - OPENAI_REASONING_MODEL=o3
+      - ENABLE_DSPY=true
+      - ENABLE_AUDIO=true
+    ports:
+      - "8000:8000"
 ```
 
-### Environment Configuration
-- **Development**: Local development with SQLite
-- **Staging**: Pre-production testing environment
-- **Production**: High-availability production deployment
-- **Government Cloud**: FedRAMP-compliant cloud deployment
-
-### Monitoring and Logging
-- **Application Monitoring**: Comprehensive application performance monitoring
-- **Security Monitoring**: Real-time security event monitoring
-- **Audit Logging**: Complete audit trail for compliance
-- **Performance Metrics**: Detailed performance and usage analytics
-- **Alert Management**: Automated alerting for critical events
-
-## Security
-
-### Security Reporting
-If you discover a security vulnerability, please send an email to security@govsecure.ai. All security vulnerabilities will be promptly addressed.
-
-### Security Features
-- **Encryption**: AES-256 encryption for data at rest
-- **Transport Security**: TLS 1.3 for all communications
-- **Authentication**: Multi-factor authentication support
-- **Authorization**: Fine-grained role-based access control
-- **Audit Logging**: Comprehensive security event logging
-- **Vulnerability Management**: Regular security scanning and updates
+### Model Access Requirements
+- OpenAI API access with latest model availability
+- Sufficient API rate limits for government usage
+- Compliance with data residency requirements
+- Security clearance for sensitive model usage
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
-
-### Documentation
-- **API Documentation**: Complete OpenAPI/Swagger documentation
-- **User Guide**: Comprehensive user documentation
-- **Administrator Guide**: System administration documentation
-- **Developer Guide**: Development and integration documentation
-
-### Community
-- **GitHub Issues**: Bug reports and feature requests
-- **Discussions**: Community discussions and Q&A
-- **Wiki**: Community-maintained documentation
-- **Examples**: Sample implementations and use cases
-
-### Professional Support
-For enterprise support, training, and custom development services, please contact our professional services team.
-
 ## Acknowledgments
 
-- **OpenAI**: For providing the advanced AI capabilities that power this platform
-- **US Government**: For the security standards and compliance frameworks that guide our development
-- **Open Source Community**: For the foundational technologies and libraries that make this platform possible
-- **Federal Technology Community**: For feedback and requirements that shape our government-focused features
+- **OpenAI**: For providing the advanced AI capabilities including GPT-4.1, o-series reasoning models, and audio models
+- **DSPy Team**: For the structured programming framework for language models
+- **US Government**: For the security standards and compliance frameworks
+- **Open Source Community**: For foundational technologies and libraries
 
 ---
 
-**GovSecure AI Platform** - Advancing Government Operations Through Artificial Intelligence
+**GovSecure AI Platform** - Advancing Government Operations Through Latest AI Technology
 
 Built with precision for the public sector by Nik Jois and the open source community. 

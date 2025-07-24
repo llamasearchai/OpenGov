@@ -1,312 +1,416 @@
 """
-Configuration management for GovSecure AI platform.
-Handles all environment variables and application settings.
+Configuration Management for GovSecure AI Platform
+Comprehensive configuration system supporting all OpenAI models and government compliance.
 
 Author: Nik Jois
 """
 
 import os
-import secrets
-from enum import Enum
-from pathlib import Path
+import logging
 from typing import Dict, List, Optional, Any, Union
+from pathlib import Path
+from dataclasses import dataclass, field
+from enum import Enum
+import json
+from dotenv import load_dotenv
 
-from pydantic import Field, validator
-from pydantic_settings import BaseSettings
-
-
-class Environment(str, Enum):
-    """Environment enum for the application."""
-    DEVELOPMENT = "development"
-    TESTING = "testing"
-    STAGING = "staging"
-    PRODUCTION = "production"
+# Load environment variables
+load_dotenv()
 
 
-class ComplianceLevel(str, Enum):
-    """Compliance level enum for the application."""
-    FEDRAMP_MODERATE = "fedramp_moderate"
-    FEDRAMP_HIGH = "fedramp_high"
-    IL4 = "il4"
-    IL5 = "il5"
-    IL6 = "il6"
-    CJIS = "cjis"
-    HIPAA = "hipaa"
-
-
-class LogLevel(str, Enum):
-    """Log level enum."""
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
-
-
-class DatabaseEngine(str, Enum):
-    """Database engine enum."""
-    POSTGRESQL = "postgresql"
-    SQLITE = "sqlite"
-
-
-class CacheType(str, Enum):
-    """Cache type enum."""
-    REDIS = "redis"
-    MEMORY = "memory"
-
-
-class APIConfig(BaseSettings):
-    """API configuration settings."""
-    host: str = Field(default="0.0.0.0", env="GOVSECURE_API__HOST")
-    port: int = Field(default=8000, env="GOVSECURE_API__PORT")
-    workers: int = Field(default=4, env="GOVSECURE_API__WORKERS")
-    reload: bool = Field(default=False, env="GOVSECURE_API__RELOAD")
-    enable_docs: bool = Field(default=True, env="GOVSECURE_API__ENABLE_DOCS")
-    api_version: str = Field(default="v1", env="GOVSECURE_API__API_VERSION")
-    rate_limit: int = Field(default=100, env="GOVSECURE_API__RATE_LIMIT")
-    timeout: int = Field(default=60, env="GOVSECURE_API__TIMEOUT")
-
-    class Config:
-        env_prefix = "GOVSECURE_API__"
-
-
-class SecurityConfig(BaseSettings):
-    """Security configuration settings."""
-    secret_key: str = Field(default_factory=lambda: secrets.token_hex(32), env="GOVSECURE_SECURITY__SECRET_KEY")
-    algorithm: str = Field(default="HS256", env="GOVSECURE_SECURITY__ALGORITHM")
-    access_token_expire_minutes: int = Field(default=30, env="GOVSECURE_SECURITY__ACCESS_TOKEN_EXPIRE_MINUTES")
-    refresh_token_expire_days: int = Field(default=7, env="GOVSECURE_SECURITY__REFRESH_TOKEN_EXPIRE_DAYS")
-    mfa_enabled: bool = Field(default=True, env="GOVSECURE_SECURITY__MFA_ENABLED")
-    password_min_length: int = Field(default=12, env="GOVSECURE_SECURITY__PASSWORD_MIN_LENGTH")
-    password_complexity: bool = Field(default=True, env="GOVSECURE_SECURITY__PASSWORD_COMPLEXITY")
-    session_timeout_minutes: int = Field(default=15, env="GOVSECURE_SECURITY__SESSION_TIMEOUT_MINUTES")
-    allowed_origins: List[str] = Field(default=["http://localhost:3000"], env="GOVSECURE_SECURITY__ALLOWED_ORIGINS")
-    tls_min_version: str = Field(default="1.2", env="GOVSECURE_SECURITY__TLS_MIN_VERSION")
-
-    class Config:
-        env_prefix = "GOVSECURE_SECURITY__"
-
-
-class DatabaseConfig(BaseSettings):
-    """Database configuration settings."""
-    engine: DatabaseEngine = Field(default=DatabaseEngine.POSTGRESQL, env="GOVSECURE_DATABASE__ENGINE")
-    host: str = Field(default="localhost", env="GOVSECURE_DATABASE__HOST")
-    port: int = Field(default=5432, env="GOVSECURE_DATABASE__PORT")
-    username: str = Field(default="postgres", env="GOVSECURE_DATABASE__USERNAME")
-    password: str = Field(default="", env="GOVSECURE_DATABASE__PASSWORD")
-    database: str = Field(default="govsecure_ai", env="GOVSECURE_DATABASE__DATABASE")
-    ssl_mode: str = Field(default="require", env="GOVSECURE_DATABASE__SSL_MODE")
-    pool_size: int = Field(default=10, env="GOVSECURE_DATABASE__POOL_SIZE")
-    max_overflow: int = Field(default=20, env="GOVSECURE_DATABASE__MAX_OVERFLOW")
+class OpenAIModelType(Enum):
+    """OpenAI model types and categories"""
+    # Flagship chat models
+    GPT_4_1 = "gpt-4.1"
+    GPT_4O = "gpt-4o"
+    GPT_4O_AUDIO = "gpt-4o-audio-preview"
+    CHATGPT_4O_LATEST = "chatgpt-4o-latest"
     
-    class Config:
-        env_prefix = "GOVSECURE_DATABASE__"
+    # Reasoning models (o-series)
+    O4_MINI = "o4-mini"
+    O3 = "o3"
+    O3_PRO = "o3-pro"
+    O3_MINI = "o3-mini"
+    O1 = "o1"
+    O1_MINI = "o1-mini"
+    O1_PRO = "o1-pro"
     
-    @property
-    def connection_string(self) -> str:
-        """Get database connection string."""
-        if self.engine == DatabaseEngine.SQLITE:
-            return f"sqlite:///{self.database}.db"
+    # Cost-optimized models
+    GPT_4_1_MINI = "gpt-4.1-mini"
+    GPT_4_1_NANO = "gpt-4.1-nano"
+    GPT_4O_MINI = "gpt-4o-mini"
+    GPT_4O_MINI_AUDIO = "gpt-4o-mini-audio-preview"
+    
+    # Legacy models (for backward compatibility)
+    GPT_4_TURBO = "gpt-4-turbo"
+    GPT_4 = "gpt-4"
+    GPT_3_5_TURBO = "gpt-3.5-turbo"
+
+
+class ModelCapability(Enum):
+    """Model capability types"""
+    TEXT = "text"
+    AUDIO = "audio"
+    REASONING = "reasoning"
+    VISION = "vision"
+    FUNCTION_CALLING = "function_calling"
+    JSON_MODE = "json_mode"
+
+
+@dataclass
+class ModelConfig:
+    """Configuration for individual OpenAI models"""
+    name: str
+    display_name: str
+    description: str
+    capabilities: List[ModelCapability] = field(default_factory=list)
+    max_tokens: int = 4096
+    context_window: int = 8192
+    cost_per_1k_input: float = 0.0
+    cost_per_1k_output: float = 0.0
+    reasoning_capable: bool = False
+    audio_capable: bool = False
+    recommended_use_cases: List[str] = field(default_factory=list)
+    government_approved: bool = True
+    compliance_level: str = "IL4"  # Information Level
+
+
+@dataclass
+class OpenAIConfig:
+    """OpenAI API configuration with all model support"""
+    api_key: str = ""
+    organization: Optional[str] = None
+    base_url: str = "https://api.openai.com/v1"
+    
+    # Default models for different use cases
+    default_model: str = "gpt-4.1"
+    reasoning_model: str = "o3"
+    cost_optimized_model: str = "gpt-4.1-mini"
+    audio_model: str = "gpt-4o-audio-preview"
+    
+    # Model configurations
+    models: Dict[str, ModelConfig] = field(default_factory=dict)
+    
+    # API settings
+    max_tokens: int = 4096
+    temperature: float = 0.7
+    timeout: int = 60
+    max_retries: int = 3
+    
+    def __post_init__(self):
+        """Initialize model configurations"""
+        if not self.models:
+            self.models = self._get_default_model_configs()
+    
+    def _get_default_model_configs(self) -> Dict[str, ModelConfig]:
+        """Get default configurations for all supported models"""
+        return {
+            # Flagship chat models
+            "gpt-4.1": ModelConfig(
+                name="gpt-4.1",
+                display_name="GPT-4.1",
+                description="Flagship GPT model for complex tasks",
+                capabilities=[ModelCapability.TEXT, ModelCapability.VISION, ModelCapability.FUNCTION_CALLING, ModelCapability.JSON_MODE],
+                max_tokens=8192,
+                context_window=32768,
+                cost_per_1k_input=0.03,
+                cost_per_1k_output=0.06,
+                recommended_use_cases=["Complex analysis", "Policy review", "Legal documents", "Strategic planning"],
+                compliance_level="IL5"
+            ),
+            "gpt-4o": ModelConfig(
+                name="gpt-4o",
+                display_name="GPT-4o",
+                description="Fast, intelligent, flexible GPT model",
+                capabilities=[ModelCapability.TEXT, ModelCapability.VISION, ModelCapability.FUNCTION_CALLING],
+                max_tokens=4096,
+                context_window=16384,
+                cost_per_1k_input=0.025,
+                cost_per_1k_output=0.05,
+                recommended_use_cases=["General chat", "Document analysis", "Citizen services"],
+                compliance_level="IL4"
+            ),
+            "gpt-4o-audio-preview": ModelConfig(
+                name="gpt-4o-audio-preview",
+                display_name="GPT-4o Audio",
+                description="GPT-4o models capable of audio inputs and outputs",
+                capabilities=[ModelCapability.TEXT, ModelCapability.AUDIO, ModelCapability.FUNCTION_CALLING],
+                max_tokens=4096,
+                context_window=16384,
+                audio_capable=True,
+                cost_per_1k_input=0.025,
+                cost_per_1k_output=0.05,
+                recommended_use_cases=["Voice interfaces", "Audio transcription", "Multilingual support"],
+                compliance_level="IL3"
+            ),
+            "chatgpt-4o-latest": ModelConfig(
+                name="chatgpt-4o-latest",
+                display_name="ChatGPT-4o",
+                description="GPT-4o model used in ChatGPT",
+                capabilities=[ModelCapability.TEXT, ModelCapability.FUNCTION_CALLING],
+                max_tokens=4096,
+                context_window=16384,
+                cost_per_1k_input=0.025,
+                cost_per_1k_output=0.05,
+                recommended_use_cases=["Interactive chat", "Q&A systems", "Help desk automation"]
+            ),
+            
+            # Reasoning models (o-series)
+            "o4-mini": ModelConfig(
+                name="o4-mini",
+                display_name="o4-mini",
+                description="Faster, more affordable reasoning model",
+                capabilities=[ModelCapability.TEXT, ModelCapability.REASONING, ModelCapability.JSON_MODE],
+                max_tokens=2048,
+                context_window=8192,
+                reasoning_capable=True,
+                cost_per_1k_input=0.015,
+                cost_per_1k_output=0.03,
+                recommended_use_cases=["Quick analysis", "Compliance checks", "Decision support"],
+                compliance_level="IL4"
+            ),
+            "o3": ModelConfig(
+                name="o3",
+                display_name="o3",
+                description="Our most powerful reasoning model",
+                capabilities=[ModelCapability.TEXT, ModelCapability.REASONING, ModelCapability.JSON_MODE],
+                max_tokens=8192,
+                context_window=32768,
+                reasoning_capable=True,
+                cost_per_1k_input=0.05,
+                cost_per_1k_output=0.10,
+                recommended_use_cases=["Complex reasoning", "Multi-step analysis", "Strategic planning", "Risk assessment"],
+                compliance_level="IL5"
+            ),
+            "o3-pro": ModelConfig(
+                name="o3-pro",
+                display_name="o3-pro",
+                description="Version of o3 with more compute for better responses",
+                capabilities=[ModelCapability.TEXT, ModelCapability.REASONING, ModelCapability.JSON_MODE],
+                max_tokens=8192,
+                context_window=32768,
+                reasoning_capable=True,
+                cost_per_1k_input=0.08,
+                cost_per_1k_output=0.16,
+                recommended_use_cases=["Critical analysis", "High-stakes decisions", "Complex policy review"],
+                compliance_level="IL5"
+            ),
+            "o3-mini": ModelConfig(
+                name="o3-mini",
+                display_name="o3-mini",
+                description="A small model alternative to o3",
+                capabilities=[ModelCapability.TEXT, ModelCapability.REASONING],
+                max_tokens=2048,
+                context_window=8192,
+                reasoning_capable=True,
+                cost_per_1k_input=0.02,
+                cost_per_1k_output=0.04,
+                recommended_use_cases=["Basic reasoning", "Routine analysis", "Quick decisions"]
+            ),
+            "o1": ModelConfig(
+                name="o1",
+                display_name="o1",
+                description="Previous full o-series reasoning model",
+                capabilities=[ModelCapability.TEXT, ModelCapability.REASONING],
+                max_tokens=4096,
+                context_window=16384,
+                reasoning_capable=True,
+                cost_per_1k_input=0.04,
+                cost_per_1k_output=0.08,
+                recommended_use_cases=["Legacy reasoning tasks", "Established workflows"]
+            ),
+            "o1-mini": ModelConfig(
+                name="o1-mini",
+                display_name="o1-mini",
+                description="A small model alternative to o1 (Deprecated)",
+                capabilities=[ModelCapability.TEXT, ModelCapability.REASONING],
+                max_tokens=2048,
+                context_window=8192,
+                reasoning_capable=True,
+                cost_per_1k_input=0.015,
+                cost_per_1k_output=0.03,
+                recommended_use_cases=["Legacy applications", "Migration scenarios"],
+                government_approved=False  # Deprecated
+            ),
+            "o1-pro": ModelConfig(
+                name="o1-pro",
+                display_name="o1-pro",
+                description="Version of o1 with more compute for better responses",
+                capabilities=[ModelCapability.TEXT, ModelCapability.REASONING],
+                max_tokens=4096,
+                context_window=16384,
+                reasoning_capable=True,
+                cost_per_1k_input=0.06,
+                cost_per_1k_output=0.12,
+                recommended_use_cases=["Legacy high-performance tasks"]
+            ),
+            
+            # Cost-optimized models
+            "gpt-4.1-mini": ModelConfig(
+                name="gpt-4.1-mini",
+                display_name="GPT-4.1 mini",
+                description="Balanced for intelligence, speed, and cost",
+                capabilities=[ModelCapability.TEXT, ModelCapability.FUNCTION_CALLING, ModelCapability.JSON_MODE],
+                max_tokens=4096,
+                context_window=16384,
+                cost_per_1k_input=0.015,
+                cost_per_1k_output=0.03,
+                recommended_use_cases=["High-volume processing", "Routine tasks", "Citizen services"],
+                compliance_level="IL4"
+            ),
+            "gpt-4.1-nano": ModelConfig(
+                name="gpt-4.1-nano",
+                display_name="GPT-4.1 nano",
+                description="Fastest, most cost-effective GPT-4.1 model",
+                capabilities=[ModelCapability.TEXT, ModelCapability.JSON_MODE],
+                max_tokens=2048,
+                context_window=8192,
+                cost_per_1k_input=0.005,
+                cost_per_1k_output=0.01,
+                recommended_use_cases=["Simple tasks", "High-frequency requests", "Basic automation"],
+                compliance_level="IL3"
+            ),
+            "gpt-4o-mini": ModelConfig(
+                name="gpt-4o-mini",
+                display_name="GPT-4o mini",
+                description="Fast, affordable small model for focused tasks",
+                capabilities=[ModelCapability.TEXT, ModelCapability.FUNCTION_CALLING],
+                max_tokens=2048,
+                context_window=8192,
+                cost_per_1k_input=0.01,
+                cost_per_1k_output=0.02,
+                recommended_use_cases=["Quick responses", "Simple analysis", "Routine operations"]
+            ),
+            "gpt-4o-mini-audio-preview": ModelConfig(
+                name="gpt-4o-mini-audio-preview",
+                display_name="GPT-4o mini Audio",
+                description="Smaller model capable of audio inputs and outputs",
+                capabilities=[ModelCapability.TEXT, ModelCapability.AUDIO],
+                max_tokens=2048,
+                context_window=8192,
+                audio_capable=True,
+                cost_per_1k_input=0.01,
+                cost_per_1k_output=0.02,
+                recommended_use_cases=["Voice interfaces", "Audio processing", "Cost-effective speech"]
+            )
+        }
+    
+    def get_model_by_capability(self, capability: ModelCapability) -> List[str]:
+        """Get models that support a specific capability"""
+        return [
+            model_name for model_name, config in self.models.items()
+            if capability in config.capabilities and config.government_approved
+        ]
+    
+    def get_reasoning_models(self) -> List[str]:
+        """Get all reasoning-capable models"""
+        return [
+            model_name for model_name, config in self.models.items()
+            if config.reasoning_capable and config.government_approved
+        ]
+    
+    def get_audio_models(self) -> List[str]:
+        """Get all audio-capable models"""
+        return [
+            model_name for model_name, config in self.models.items()
+            if config.audio_capable and config.government_approved
+        ]
+    
+    def get_cost_optimized_models(self) -> List[str]:
+        """Get cost-optimized models sorted by cost"""
+        cost_models = [
+            (model_name, config) for model_name, config in self.models.items()
+            if config.cost_per_1k_input <= 0.02 and config.government_approved
+        ]
+        return [model[0] for model in sorted(cost_models, key=lambda x: x[1].cost_per_1k_input)]
+    
+    def get_model_for_use_case(self, use_case: str) -> Optional[str]:
+        """Get recommended model for specific use case"""
+        use_case_lower = use_case.lower()
         
-        auth = f"{self.username}:{self.password}" if self.username else ""
-        host = f"{self.host}:{self.port}" if self.port else self.host
+        # Use case to model mapping
+        use_case_mappings = {
+            "reasoning": self.reasoning_model,
+            "analysis": "gpt-4.1",
+            "chat": "gpt-4o",
+            "audio": self.audio_model,
+            "cost": self.cost_optimized_model,
+            "compliance": "o3",
+            "emergency": "gpt-4.1",
+            "translation": "gpt-4o",
+            "documents": "gpt-4.1"
+        }
         
-        if auth:
-            return f"{self.engine.value}://{auth}@{host}/{self.database}"
+        for key, model in use_case_mappings.items():
+            if key in use_case_lower:
+                return model
+        
+        return self.default_model
+
+
+@dataclass
+class Config:
+    """Main configuration class combining all settings"""
+    
+    # Core application settings
+    app_name: str = "GovSecure AI Platform"
+    version: str = "1.0.0"
+    environment: str = "development"
+    debug: bool = False
+    
+    # OpenAI configuration
+    openai: OpenAIConfig = field(default_factory=OpenAIConfig)
+    
+    # Security settings
+    secret_key: str = "your-super-secret-key-change-in-production"
+    
+    # Database settings
+    database_url: str = "sqlite:///./govsecure.db"
+    
+    # API settings
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+    
+    # Compliance settings
+    compliance_level: str = "FEDRAMP_HIGH"
+    
+    def __post_init__(self):
+        """Initialize configuration from environment variables"""
+        # Load OpenAI configuration from environment
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        organization = os.getenv("OPENAI_ORGANIZATION")
+        
+        if api_key:
+            self.openai = OpenAIConfig(
+                api_key=api_key,
+                organization=organization
+            )
         else:
-            return f"{self.engine.value}://{host}/{self.database}"
-
-
-class CacheConfig(BaseSettings):
-    """Cache configuration settings."""
-    type: CacheType = Field(default=CacheType.REDIS, env="GOVSECURE_CACHE__TYPE")
-    host: str = Field(default="localhost", env="GOVSECURE_CACHE__HOST")
-    port: int = Field(default=6379, env="GOVSECURE_CACHE__PORT")
-    db: int = Field(default=0, env="GOVSECURE_CACHE__DB")
-    password: Optional[str] = Field(default=None, env="GOVSECURE_CACHE__PASSWORD")
-    ssl: bool = Field(default=False, env="GOVSECURE_CACHE__SSL")
-    default_ttl: int = Field(default=300, env="GOVSECURE_CACHE__DEFAULT_TTL")
-    
-    class Config:
-        env_prefix = "GOVSECURE_CACHE__"
-
-
-class AuthConfig(BaseSettings):
-    """Authentication configuration settings."""
-    auth_providers: List[str] = Field(default=["local"], env="GOVSECURE_AUTH__AUTH_PROVIDERS")
-    rbac_enabled: bool = Field(default=True, env="GOVSECURE_AUTH__RBAC_ENABLED")
-    jwt_enabled: bool = Field(default=True, env="GOVSECURE_AUTH__JWT_ENABLED")
-    saml_enabled: bool = Field(default=False, env="GOVSECURE_AUTH__SAML_ENABLED")
-    oidc_enabled: bool = Field(default=False, env="GOVSECURE_AUTH__OIDC_ENABLED")
-    max_sessions_per_user: int = Field(default=5, env="GOVSECURE_AUTH__MAX_SESSIONS_PER_USER")
-    max_failed_logins: int = Field(default=5, env="GOVSECURE_AUTH__MAX_FAILED_LOGINS")
-    lockout_duration_minutes: int = Field(default=30, env="GOVSECURE_AUTH__LOCKOUT_DURATION_MINUTES")
-    
-    class Config:
-        env_prefix = "GOVSECURE_AUTH__"
-
-
-class ComplianceConfig(BaseSettings):
-    """Compliance configuration settings."""
-    compliance_level: ComplianceLevel = Field(default=ComplianceLevel.FEDRAMP_HIGH, env="GOVSECURE_COMPLIANCE__COMPLIANCE_LEVEL")
-    auto_remediation_enabled: bool = Field(default=True, env="GOVSECURE_COMPLIANCE__AUTO_REMEDIATION_ENABLED")
-    scans_schedule: str = Field(default="0 0 * * *", env="GOVSECURE_COMPLIANCE__SCANS_SCHEDULE")
-    report_generation_enabled: bool = Field(default=True, env="GOVSECURE_COMPLIANCE__REPORT_GENERATION_ENABLED")
-    continuous_monitoring_enabled: bool = Field(default=True, env="GOVSECURE_COMPLIANCE__CONTINUOUS_MONITORING_ENABLED")
-    vulnerability_scan_enabled: bool = Field(default=True, env="GOVSECURE_COMPLIANCE__VULNERABILITY_SCAN_ENABLED")
-    stig_compliance_enabled: bool = Field(default=True, env="GOVSECURE_COMPLIANCE__STIG_COMPLIANCE_ENABLED")
-    
-    class Config:
-        env_prefix = "GOVSECURE_COMPLIANCE__"
-
-
-class LoggingConfig(BaseSettings):
-    """Logging configuration settings."""
-    level: LogLevel = Field(default=LogLevel.INFO, env="GOVSECURE_LOGGING__LEVEL")
-    format: str = Field(default="json", env="GOVSECURE_LOGGING__FORMAT")
-    log_to_file: bool = Field(default=True, env="GOVSECURE_LOGGING__LOG_TO_FILE")
-    log_file: str = Field(default="logs/govsecure-ai.log", env="GOVSECURE_LOGGING__LOG_FILE")
-    enable_audit_logs: bool = Field(default=True, env="GOVSECURE_LOGGING__ENABLE_AUDIT_LOGS")
-    audit_log_file: str = Field(default="logs/audit.log", env="GOVSECURE_LOGGING__AUDIT_LOG_FILE")
-    opentelemetry_enabled: bool = Field(default=True, env="GOVSECURE_LOGGING__OPENTELEMETRY_ENABLED")
-    opentelemetry_endpoint: Optional[str] = Field(default=None, env="GOVSECURE_LOGGING__OPENTELEMETRY_ENDPOINT")
-    
-    class Config:
-        env_prefix = "GOVSECURE_LOGGING__"
-
-
-class AIConfig(BaseSettings):
-    """AI model configuration settings."""
-    model_registry_path: str = Field(default="models", env="GOVSECURE_AI__MODEL_REGISTRY_PATH")
-    enable_gpu: bool = Field(default=False, env="GOVSECURE_AI__ENABLE_GPU")
-    max_batch_size: int = Field(default=16, env="GOVSECURE_AI__MAX_BATCH_SIZE")
-    default_inference_timeout: int = Field(default=60, env="GOVSECURE_AI__DEFAULT_INFERENCE_TIMEOUT")
-    enable_stream_responses: bool = Field(default=True, env="GOVSECURE_AI__ENABLE_STREAM_RESPONSES")
-    model_validation_required: bool = Field(default=True, env="GOVSECURE_AI__MODEL_VALIDATION_REQUIRED")
-    model_monitoring_enabled: bool = Field(default=True, env="GOVSECURE_AI__MODEL_MONITORING_ENABLED")
-    explainability_required: bool = Field(default=True, env="GOVSECURE_AI__EXPLAINABILITY_REQUIRED")
-    
-    class Config:
-        env_prefix = "GOVSECURE_AI__"
-
-
-class StorageConfig(BaseSettings):
-    """Storage configuration settings."""
-    provider: str = Field(default="local", env="GOVSECURE_STORAGE__PROVIDER")
-    local_path: str = Field(default="data", env="GOVSECURE_STORAGE__LOCAL_PATH")
-    encryption_enabled: bool = Field(default=True, env="GOVSECURE_STORAGE__ENCRYPTION_ENABLED")
-    encryption_key_management: str = Field(default="application", env="GOVSECURE_STORAGE__ENCRYPTION_KEY_MANAGEMENT")
-    file_size_limit_mb: int = Field(default=100, env="GOVSECURE_STORAGE__FILE_SIZE_LIMIT_MB")
-    bucket_name: Optional[str] = Field(default=None, env="GOVSECURE_STORAGE__BUCKET_NAME")
-    
-    class Config:
-        env_prefix = "GOVSECURE_STORAGE__"
-
-
-class FeatureFlags(BaseSettings):
-    """Feature flags configuration."""
-    demo_mode: bool = Field(default=False, env="GOVSECURE_FEATURES__DEMO_MODE")
-    mock_ai_responses: bool = Field(default=False, env="GOVSECURE_FEATURES__MOCK_AI_RESPONSES")
-    bypass_auth: bool = Field(default=False, env="GOVSECURE_FEATURES__BYPASS_AUTH")
-    enable_debug_endpoints: bool = Field(default=False, env="GOVSECURE_FEATURES__ENABLE_DEBUG_ENDPOINTS")
-    
-    class Config:
-        env_prefix = "GOVSECURE_FEATURES__"
-
-
-class OpenAIConfig(BaseSettings):
-    """OpenAI configuration settings."""
-    api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
-    organization: Optional[str] = Field(default=None, env="OPENAI_ORGANIZATION")
-    model: str = Field(default="gpt-4-turbo-preview", env="OPENAI_MODEL")
-    max_tokens: int = Field(default=4096, env="OPENAI_MAX_TOKENS")
-    temperature: float = Field(default=0.1, env="OPENAI_TEMPERATURE")
-    
-    class Config:
-        env_prefix = "OPENAI_"
-
-
-class Config(BaseSettings):
-    """Main configuration class that combines all settings."""
-    
-    # Core settings
-    app_name: str = Field(default="GovSecure AI", env="GOVSECURE_APP_NAME")
-    environment: Environment = Field(default=Environment.DEVELOPMENT, env="GOVSECURE_ENVIRONMENT")
-    deployment_id: str = Field(default="local-dev", env="GOVSECURE_DEPLOYMENT_ID")
-    base_dir: str = Field(default=".", env="GOVSECURE_BASE_DIR")
-    debug: bool = Field(default=False, env="GOVSECURE_DEBUG")
-    version: str = Field(default="1.0.0", env="GOVSECURE_VERSION")
-    
-    # Sub-configurations
-    api: APIConfig = Field(default_factory=APIConfig)
-    security: SecurityConfig = Field(default_factory=SecurityConfig)
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
-    cache: CacheConfig = Field(default_factory=CacheConfig)
-    auth: AuthConfig = Field(default_factory=AuthConfig)
-    compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
-    logging: LoggingConfig = Field(default_factory=LoggingConfig)
-    ai: AIConfig = Field(default_factory=AIConfig)
-    storage: StorageConfig = Field(default_factory=StorageConfig)
-    features: FeatureFlags = Field(default_factory=FeatureFlags)
-    openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        extra = "allow"
-    
-    @validator("base_dir")
-    def validate_base_dir(cls, v):
-        """Validate base directory exists."""
-        path = Path(v)
-        if not path.exists():
-            path.mkdir(parents=True, exist_ok=True)
-        return str(path.absolute())
-    
-    def __init__(self, **kwargs):
-        """Initialize configuration with nested models."""
-        super().__init__(**kwargs)
-        
-        # Initialize nested configurations
-        self.api = APIConfig()
-        self.security = SecurityConfig()
-        self.database = DatabaseConfig()
-        self.cache = CacheConfig()
-        self.auth = AuthConfig()
-        self.compliance = ComplianceConfig()
-        self.logging = LoggingConfig()
-        self.ai = AIConfig()
-        self.storage = StorageConfig()
-        self.features = FeatureFlags()
-        
-        # Try to initialize OpenAI config (may fail if no API key)
-        try:
+            # Create default config for development/testing
             self.openai = OpenAIConfig()
-        except Exception:
-            # Create default OpenAI config for cases where no key is set
-            self.openai = OpenAIConfig(api_key="not-set")
-    
-    @property
-    def is_production(self) -> bool:
-        """Check if running in production."""
-        return self.environment == Environment.PRODUCTION
+        
+        # Load other environment variables
+        self.debug = os.getenv("DEBUG", "false").lower() == "true"
+        self.environment = os.getenv("ENVIRONMENT", "development")
+        self.database_url = os.getenv("DATABASE_URL", self.database_url)
+        self.api_host = os.getenv("API_HOST", self.api_host)
+        self.api_port = int(os.getenv("API_PORT", str(self.api_port)))
+        self.secret_key = os.getenv("SECRET_KEY", self.secret_key)
     
     @property
     def is_development(self) -> bool:
-        """Check if running in development."""  
-        return self.environment == Environment.DEVELOPMENT
+        """Check if running in development mode"""
+        return self.environment.lower() == "development"
+    
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production mode"""
+        return self.environment.lower() == "production"
     
     @property
     def is_testing(self) -> bool:
-        """Check if running in testing."""
-        return self.environment == Environment.TESTING
-    
-    def get_log_level(self) -> str:
-        """Get the appropriate log level."""
-        if self.debug:
-            return "DEBUG"
-        return self.logging.level.value
+        """Check if running in testing mode"""
+        return self.environment.lower() == "testing"
 
 
 # Global configuration instance
@@ -314,7 +418,7 @@ _config: Optional[Config] = None
 
 
 def get_config() -> Config:
-    """Get the global configuration instance."""
+    """Get the global configuration instance"""
     global _config
     if _config is None:
         _config = Config()
@@ -322,7 +426,7 @@ def get_config() -> Config:
 
 
 def reload_config() -> Config:
-    """Reload the configuration from environment."""
+    """Reload the configuration from environment"""
     global _config
     _config = Config()
     return _config 

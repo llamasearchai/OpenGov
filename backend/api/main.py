@@ -241,7 +241,7 @@ async def health_check():
             status="healthy",
             timestamp=datetime.now(),
             version="1.0.0",
-            environment=config.environment.value,
+            environment=config.environment,
             services=services
         )
     except Exception as e:
@@ -689,7 +689,7 @@ async def startup_event():
     """Application startup"""
     logger.info("GovSecure AI Platform API starting up",
                version="1.0.0",
-               environment=config.environment.value)
+               environment=config.environment)
 
 
 @app.on_event("shutdown")
