@@ -90,6 +90,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CJIS**: Criminal justice information services compliance
 - **Privacy**: Data protection and PII handling guidelines
 
+## [2.0.1] - 2024-12-19
+
+### Added
+- Official OpenGov SVG logo embedded in README for brand visibility
+
 ## [1.0.0] - 2024-11-15
 
 ### Added
