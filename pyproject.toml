@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "govsecure-ai-platform"
 version = "2.0.0"
 authors = [
-    {name = "Nik Jois"},
+    {name = "Nik Jois", email = "nikjois@llamasearch.ai"},
 ]
 description = "Advanced AI-Powered Government Operations Platform with Latest OpenAI Models"
 readme = "README.md"
@@ -14,11 +14,14 @@ license = {file = "LICENSE"}
 requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Government",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Office/Business",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
@@ -29,11 +32,13 @@ classifiers = [
     "Environment :: Web Environment",
     "Framework :: FastAPI",
     "Natural Language :: English",
+    "Typing :: Typed",
 ]
 keywords = [
     "government", "ai", "openai", "gpt-4", "compliance", "fedramp", "nist", 
     "security", "automation", "dspy", "reasoning", "audio", "translation",
-    "policy", "analysis", "risk", "assessment", "citizen", "services"
+    "policy", "analysis", "risk", "assessment", "citizen", "services",
+    "federal", "public-sector", "artificial-intelligence", "machine-learning"
 ]
 dependencies = [
     "fastapi>=0.104.1",
@@ -132,10 +137,12 @@ govsecure = "cli:cli"
 govsecure-ai = "cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/llamasearchai/OpenGov"
-Documentation = "https://github.com/llamasearchai/OpenGov#readme"
-Repository = "https://github.com/llamasearchai/OpenGov"
-"Bug Tracker" = "https://github.com/llamasearchai/OpenGov/issues"
+Homepage = "https://github.com/nikjois/PublicGovPlatform"
+Documentation = "https://github.com/nikjois/PublicGovPlatform#readme"
+Repository = "https://github.com/nikjois/PublicGovPlatform"
+"Bug Tracker" = "https://github.com/nikjois/PublicGovPlatform/issues"
+"Changelog" = "https://github.com/nikjois/PublicGovPlatform/blob/main/CHANGELOG.md"
+"Discussions" = "https://github.com/nikjois/PublicGovPlatform/discussions"
 
 [tool.hatch.version]
 path = "backend/__init__.py"

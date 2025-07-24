@@ -1,6 +1,6 @@
 """
 Setup script for GovSecure AI Platform
-Author: Nik Jois
+Author: Nik Jois <nikjois@llamasearch.ai>
 """
 
 import os
@@ -20,32 +20,40 @@ setup(
     name="govsecure-ai-platform",
     version="2.0.0",
     author="Nik Jois",
+    author_email="nikjois@llamasearch.ai",
     description="Advanced AI-Powered Government Operations Platform with Latest OpenAI Models",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/llamasearchai/OpenGov",
+    url="https://github.com/nikjois/PublicGovPlatform",
     project_urls={
-        "Bug Tracker": "https://github.com/llamasearchai/OpenGov/issues",
-        "Documentation": "https://github.com/llamasearchai/OpenGov#readme",
-        "Source Code": "https://github.com/llamasearchai/OpenGov",
+        "Bug Tracker": "https://github.com/nikjois/PublicGovPlatform/issues",
+        "Documentation": "https://github.com/nikjois/PublicGovPlatform#readme",
+        "Source Code": "https://github.com/nikjois/PublicGovPlatform",
+        "Changelog": "https://github.com/nikjois/PublicGovPlatform/blob/main/CHANGELOG.md",
+        "Discussions": "https://github.com/nikjois/PublicGovPlatform/discussions",
     },
     packages=find_packages(),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Government",
         "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Office/Business :: Financial :: Accounting",
+        "Topic :: Security",
+        "Topic :: System :: Systems Administration",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
         "Environment :: Web Environment",
         "Framework :: FastAPI",
         "Natural Language :: English",
+        "Typing :: Typed",
     ],
     python_requires=">=3.9",
     install_requires=requirements,
@@ -61,6 +69,7 @@ setup(
             "mypy>=1.7.1",
             "bandit>=1.7.5",
             "safety>=2.3.5",
+            "pre-commit>=3.6.0",
         ],
         "audio": [
             "librosa>=0.10.1",
@@ -70,11 +79,19 @@ setup(
         "dspy": [
             "dspy-ai>=2.4.0",
         ],
-        "full": [
+        "ai": [
+            "sentence-transformers>=2.2.2",
+            "faiss-cpu>=1.7.4",
+            "chromadb>=0.4.20",
+        ],
+        "all": [
             "librosa>=0.10.1",
             "soundfile>=0.12.1",
             "speech-recognition>=3.10.0",
             "dspy-ai>=2.4.0",
+            "sentence-transformers>=2.2.2",
+            "faiss-cpu>=1.7.4",
+            "chromadb>=0.4.20",
         ]
     },
     entry_points={
@@ -91,7 +108,8 @@ setup(
     keywords=[
         "government", "ai", "openai", "gpt-4", "compliance", "fedramp", "nist",
         "security", "automation", "dspy", "reasoning", "audio", "translation",
-        "policy", "analysis", "risk", "assessment", "citizen", "services"
+        "policy", "analysis", "risk", "assessment", "citizen", "services",
+        "federal", "public-sector", "artificial-intelligence", "machine-learning"
     ],
     zip_safe=False,
 )
