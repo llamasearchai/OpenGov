@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/opengov_logo.svg" alt="OpenGov Logo" width="180"/>
+</p>
+
 # GovSecure AI Platform
 
 [![CI/CD Pipeline](https://github.com/nikjois/PublicGovPlatform/actions/workflows/ci.yml/badge.svg)](https://github.com/nikjois/PublicGovPlatform/actions/workflows/ci.yml)
