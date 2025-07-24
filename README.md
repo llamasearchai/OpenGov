@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/opengov_logo.svg" alt="OpenGov Logo" width="150" height="150"/>
+  <img src="assets/opengov_logo.svg" alt="OpenGov Premium Logo" width="160" height="224"/>
   <h1>GovSecure AI Platform</h1>
 </div>
 
