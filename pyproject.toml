@@ -14,13 +14,12 @@ license = {file = "LICENSE"}
 requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Government",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
+    "Intended Audience :: Other Audience",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Office/Business :: Financial :: Accounting",
-    "Topic :: Security",
+    "Topic :: Office/Business",
     "Topic :: System :: Systems Administration",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
