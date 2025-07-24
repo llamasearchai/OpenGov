@@ -54,13 +54,7 @@ def main():
     
     if passed == total:
         print("All core tests PASSED")
-        
-        # Update README badges
-        badge_script = Path("scripts/update-badges.py")
-        if badge_script.exists():
-            print("\nUpdating README badges...")
-            subprocess.run([sys.executable, str(badge_script)], timeout=30)
-        
+        print("CI/CD pipeline components validated successfully")
         return 0
     else:
         print("Some tests FAILED")
