@@ -101,6 +101,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README logo switched to Markdown image for reliable rendering on GitHub
 - GitHub CI workflow: removed invalid environment block; uses `PYPI_TOKEN` secret
 
+## [2.0.3] - 2024-12-19
+
+### Enhanced
+- OpenGov logo optimized for maximum visibility on GitHub README
+- Logo redesigned with white background and improved contrast for GitHub compatibility
+- README layout enhanced with centered HTML structure for professional presentation
+- Repository badge URLs corrected to point to llamasearchai/OpenGov
+- Logo dimensions set to 150x150px for optimal display
+
 ## [1.0.0] - 2024-11-15
 
 ### Added

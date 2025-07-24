@@ -18,7 +18,7 @@ with open('requirements.txt') as f:
 
 setup(
     name="govsecure-ai-platform",
-    version="2.0.2",
+    version="2.0.3",
     author="Nik Jois",
     author_email="nikjois@llamasearch.ai",
     description="Advanced AI-Powered Government Operations Platform with Latest OpenAI Models",

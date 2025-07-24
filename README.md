@@ -1,15 +1,16 @@
-![OpenGov Logo](assets/opengov_logo.svg)
+<div align="center">
+  <img src="assets/opengov_logo.svg" alt="OpenGov Logo" width="150" height="150"/>
+  <h1>GovSecure AI Platform</h1>
+</div>
 
-# GovSecure AI Platform
-
-[![CI/CD Pipeline](https://github.com/nikjois/PublicGovPlatform/actions/workflows/ci.yml/badge.svg)](https://github.com/nikjois/PublicGovPlatform/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/llamasearchai/OpenGov/actions/workflows/ci.yml/badge.svg)](https://github.com/llamasearchai/OpenGov/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/govsecure-ai-platform.svg)](https://badge.fury.io/py/govsecure-ai-platform)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Security: bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![Codecov](https://codecov.io/gh/nikjois/PublicGovPlatform/branch/main/graph/badge.svg)](https://codecov.io/gh/nikjois/PublicGovPlatform)
+[![Codecov](https://codecov.io/gh/llamasearchai/OpenGov/branch/main/graph/badge.svg)](https://codecov.io/gh/llamasearchai/OpenGov)
 
 **Advanced AI-Powered Government Operations Platform with Latest OpenAI Models**
 
