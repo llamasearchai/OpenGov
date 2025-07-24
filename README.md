@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="assets/opengov_logo.svg" alt="OpenGov Logo" width="180"/>
-</p>
+![OpenGov Logo](assets/opengov_logo.svg)
 
 # GovSecure AI Platform
 

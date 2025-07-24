@@ -95,6 +95,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Official OpenGov SVG logo embedded in README for brand visibility
 
+## [2.0.2] - 2024-12-19
+
+### Fixed
+- README logo switched to Markdown image for reliable rendering on GitHub
+- GitHub CI workflow: removed invalid environment block; uses `PYPI_TOKEN` secret
+
 ## [1.0.0] - 2024-11-15
 
 ### Added
