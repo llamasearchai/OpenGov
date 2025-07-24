@@ -18,7 +18,7 @@ with open('requirements.txt') as f:
 
 setup(
     name="govsecure-ai-platform",
-    version="2.0.4",
+    version="2.0.5",
     author="Nik Jois",
     author_email="nikjois@llamasearch.ai",
     description="Advanced AI-Powered Government Operations Platform with Latest OpenAI Models",
@@ -91,7 +91,7 @@ setup(
             "sentence-transformers>=2.2.2",
             "faiss-cpu>=1.7.4",
             "chromadb>=0.4.20",
-        ]
+        ],
     },
     entry_points={
         "console_scripts": [
@@ -105,10 +105,29 @@ setup(
         "": ["*.md", "*.txt", "*.cfg", "*.ini"],
     },
     keywords=[
-        "government", "ai", "openai", "gpt-4", "compliance", "fedramp", "nist",
-        "security", "automation", "dspy", "reasoning", "audio", "translation",
-        "policy", "analysis", "risk", "assessment", "citizen", "services",
-        "federal", "public-sector", "artificial-intelligence", "machine-learning"
+        "government",
+        "ai",
+        "openai",
+        "gpt-4",
+        "compliance",
+        "fedramp",
+        "nist",
+        "security",
+        "automation",
+        "dspy",
+        "reasoning",
+        "audio",
+        "translation",
+        "policy",
+        "analysis",
+        "risk",
+        "assessment",
+        "citizen",
+        "services",
+        "federal",
+        "public-sector",
+        "artificial-intelligence",
+        "machine-learning",
     ],
     zip_safe=False,
 )
