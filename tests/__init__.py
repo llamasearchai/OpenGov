@@ -5,4 +5,4 @@ Comprehensive testing for all platform components.
 Author: Nik Jois
 """
 
-__version__ = "1.0.0" 
+__version__ = "1.0.0"

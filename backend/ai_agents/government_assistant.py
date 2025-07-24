@@ -6,17 +6,15 @@ document processing, compliance assistance, and emergency response coordination.
 Author: Nik Jois
 """
 
-import asyncio
-import logging
-from enum import Enum
-from typing import Dict, List, Optional, Any, Union
-from datetime import datetime
 import json
-import re
+import logging
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
 import openai
 from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
 
 from backend.core.config import get_config
 
@@ -74,15 +72,15 @@ class GovernmentAssistant:
     - Emergency response coordination
     - Policy analysis and recommendation
     """
-    
+
     def __init__(self, config=None):
         self.config = config or get_config()
         self.logger = logging.getLogger(__name__)
-        
+
         # Initialize OpenAI clients
         self.openai_client = None
         self.async_openai_client = None
-        
+
         try:
             if self.config.openai.api_key:
                 self.openai_client = openai.OpenAI(
@@ -98,16 +96,16 @@ class GovernmentAssistant:
                 self.logger.warning("OpenAI API key not configured - using mock responses")
         except Exception as e:
             self.logger.warning(f"Failed to initialize OpenAI client: {e}")
-        
+
         # Current assistant mode
         self.current_mode = AssistantMode.GENERAL
-        
+
         # Knowledge bases for different domains
         self._load_knowledge_bases()
-        
+
         # Conversation history
         self.conversation_history: List[Dict[str, str]] = []
-        
+
     def _load_knowledge_bases(self):
         """Load domain-specific knowledge bases"""
         self.knowledge_bases = {
@@ -143,7 +141,7 @@ class GovernmentAssistant:
                 "local": ["Police", "Fire", "Public Works", "Planning", "Parks"]
             }
         }
-    
+
     async def set_mode(self, mode):
         """Set the operating mode of the assistant"""
         # Validate mode - accept both string and AssistantMode enum
@@ -154,13 +152,13 @@ class GovernmentAssistant:
                 raise ValueError(f"Invalid assistant mode: {mode}")
         elif not isinstance(mode, AssistantMode):
             raise ValueError(f"Mode must be AssistantMode enum or string, got {type(mode)}")
-        
+
         self.current_mode = mode
         self.logger.info(f"Assistant mode set to: {mode.value}")
-        
+
         # Clear conversation history when switching modes
         self.conversation_history = []
-    
+
     async def chat(self, message: str, context: Optional[Dict] = None) -> str:
         """
         Main chat interface with mode-aware responses
@@ -180,7 +178,7 @@ class GovernmentAssistant:
                 "content": message,
                 "mode": self.current_mode.value
             })
-            
+
             # Generate response based on current mode
             if self.current_mode == AssistantMode.CITIZEN_SERVICE:
                 response = await self._handle_citizen_service(message, context)
@@ -190,7 +188,7 @@ class GovernmentAssistant:
                 response = await self._handle_emergency_response(message, context)
             else:
                 response = await self._handle_general_query(message, context)
-            
+
             # Add response to conversation history
             self.conversation_history.append({
                 "timestamp": datetime.now().isoformat(),
@@ -198,23 +196,23 @@ class GovernmentAssistant:
                 "content": response,
                 "mode": self.current_mode.value
             })
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error in chat: {e}")
-            return f"I apologize, but I encountered an error processing your request. Please try again or contact technical support."
-    
+            return "I apologize, but I encountered an error processing your request. Please try again or contact technical support."
+
     async def _handle_citizen_service(self, message: str, context: Optional[Dict] = None) -> str:
         """Handle citizen service inquiries"""
-        
+
         # Determine service category
         service_category = self._categorize_citizen_service(message)
-        
+
         if not self.async_openai_client:
             # Mock response for when OpenAI is not available
             return self._generate_mock_citizen_response(message, service_category)
-        
+
         try:
             system_prompt = f"""You are a helpful government customer service representative assisting citizens with {service_category} services. 
 
@@ -232,7 +230,7 @@ Available services in {service_category}:
 
 Current conversation context: {self.current_mode.value}
 """
-            
+
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
                 messages=[
@@ -242,49 +240,49 @@ Current conversation context: {self.current_mode.value}
                 max_tokens=self.config.openai.max_tokens,
                 temperature=self.config.openai.temperature
             )
-            
+
             return response.choices[0].message.content
-            
+
         except Exception as e:
             self.logger.error(f"Error in citizen service handler: {e}")
             return self._generate_mock_citizen_response(message, service_category)
-    
+
     def _categorize_citizen_service(self, message: str) -> str:
         """Categorize citizen service inquiry"""
         message_lower = message.lower()
-        
+
         # 311 services keywords
         if any(keyword in message_lower for keyword in ['street', 'pothole', 'noise', 'parking', 'trash', 'water', 'light']):
             return "311_services"
-        
+
         # Benefits keywords
         if any(keyword in message_lower for keyword in ['snap', 'medicaid', 'housing', 'unemployment', 'benefits', 'assistance']):
             return "benefits"
-        
+
         # Permits and licenses keywords
         if any(keyword in message_lower for keyword in ['permit', 'license', 'business', 'building', 'event']):
             return "permits_licenses"
-        
+
         return "311_services"  # Default category
-    
+
     def _generate_mock_citizen_response(self, message: str, category: str) -> str:
         """Generate mock response for citizen services when OpenAI is unavailable"""
         responses = {
             "311_services": f"Thank you for contacting 311 services. I understand you're inquiring about: {message[:50]}... For immediate assistance with street maintenance, utilities, or city services, please call 311 or visit your city's website. I can help you identify the specific department and required information for your request.",
-            
+
             "benefits": f"I'm here to help you with government benefits and assistance programs. Based on your inquiry about: {message[:50]}... I can guide you through eligibility requirements, application processes, and required documentation. Would you like information about SNAP, Medicaid, housing assistance, or another specific program?",
-            
+
             "permits_licenses": f"Thank you for your inquiry about permits and licenses: {message[:50]}... I can help you understand the application process, required documents, fees, and processing times. Please let me know the specific type of permit or license you need, and I'll provide detailed guidance."
         }
-        
+
         return responses.get(category, "Thank you for contacting government services. I'm here to help you navigate government processes and find the information you need. Please provide more details about what service or assistance you're looking for.")
-    
+
     async def _handle_compliance_query(self, message: str, context: Optional[Dict] = None) -> str:
         """Handle compliance-related queries"""
-        
+
         if not self.async_openai_client:
             return self._generate_mock_compliance_response(message)
-        
+
         try:
             system_prompt = f"""You are a compliance expert specializing in government and federal regulations. 
 
@@ -308,7 +306,7 @@ Provide specific, actionable guidance including:
 
 Current context: Government compliance assistance
 """
-            
+
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
                 messages=[
@@ -318,13 +316,13 @@ Current context: Government compliance assistance
                 max_tokens=self.config.openai.max_tokens,
                 temperature=0.3  # Lower temperature for more precise compliance guidance
             )
-            
+
             return response.choices[0].message.content
-            
+
         except Exception as e:
             self.logger.error(f"Error in compliance handler: {e}")
             return self._generate_mock_compliance_response(message)
-    
+
     def _generate_mock_compliance_response(self, message: str) -> str:
         """Generate mock compliance response"""
         return f"""Based on your compliance inquiry: {message[:100]}...
@@ -343,13 +341,13 @@ For specific control implementations, I recommend:
 4. Establishing continuous monitoring processes
 
 Would you like detailed guidance on any specific compliance framework or control family?"""
-    
+
     async def _handle_emergency_response(self, message: str, context: Optional[Dict] = None) -> str:
         """Handle emergency response coordination queries"""
-        
+
         if not self.async_openai_client:
             return self._generate_mock_emergency_response(message)
-        
+
         try:
             system_prompt = f"""You are an emergency management coordinator assisting with emergency response planning and coordination.
 
@@ -375,7 +373,7 @@ Provide actionable emergency management guidance including:
 
 Maintain urgency and clarity appropriate for emergency situations.
 """
-            
+
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
                 messages=[
@@ -385,13 +383,13 @@ Maintain urgency and clarity appropriate for emergency situations.
                 max_tokens=self.config.openai.max_tokens,
                 temperature=0.4  # Balanced creativity for emergency scenarios
             )
-            
+
             return response.choices[0].message.content
-            
+
         except Exception as e:
             self.logger.error(f"Error in emergency response handler: {e}")
             return self._generate_mock_emergency_response(message)
-    
+
     def _generate_mock_emergency_response(self, message: str) -> str:
         """Generate mock emergency response"""
         return f"""Emergency Response Coordination - {message[:50]}...
@@ -412,13 +410,13 @@ Key Coordination Steps:
 
 For immediate emergency assistance, contact 911.
 For emergency planning and coordination, please provide specific scenario details for targeted guidance."""
-    
+
     async def _handle_general_query(self, message: str, context: Optional[Dict] = None) -> str:
         """Handle general government assistance queries"""
-        
+
         if not self.async_openai_client:
             return self._generate_mock_general_response(message)
-        
+
         try:
             system_prompt = """You are a knowledgeable government assistant helping with general inquiries about government services, processes, and information.
 
@@ -431,7 +429,7 @@ Your role includes:
 
 Maintain a helpful, professional tone and provide specific, actionable information whenever possible.
 Always suggest appropriate next steps or resources for follow-up."""
-            
+
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
                 messages=[
@@ -441,17 +439,17 @@ Always suggest appropriate next steps or resources for follow-up."""
                 max_tokens=self.config.openai.max_tokens,
                 temperature=self.config.openai.temperature
             )
-            
+
             return response.choices[0].message.content
-            
+
         except Exception as e:
             self.logger.error(f"Error in general query handler: {e}")
             return self._generate_mock_general_response(message)
-    
+
     def _generate_mock_general_response(self, message: str) -> str:
         """Generate mock response for general queries when OpenAI is unavailable"""
         message_lower = message.lower()
-        
+
         if any(keyword in message_lower for keyword in ['services', 'help', 'what', 'how']):
             return """Welcome to GovSecure AI Platform! I can assist you with:
 
@@ -467,10 +465,10 @@ To get started, you can:
 - Get help with emergency response planning
 
 How can I assist you today?"""
-        
+
         elif any(keyword in message_lower for keyword in ['thank', 'bye', 'goodbye']):
             return "Thank you for using GovSecure AI Platform. Have a great day and stay safe!"
-        
+
         else:
             return f"""I understand you're asking about: {message[:100]}...
 
@@ -482,7 +480,7 @@ While I don't have access to the full AI capabilities right now, I can still hel
 • Document processing workflows
 
 Please let me know what specific area you'd like assistance with, and I'll provide the best guidance I can using my built-in knowledge base."""
-    
+
     async def analyze_document(self, content: str, analysis_type: str = "general") -> Dict[str, Any]:
         """
         Analyze document content with government-specific focus
@@ -496,11 +494,11 @@ Please let me know what specific area you'd like assistance with, and I'll provi
         """
         if not content or not content.strip():
             raise ValueError("Document content cannot be empty")
-            
+
         try:
             if not self.async_openai_client:
                 return self._generate_mock_document_analysis(content, analysis_type)
-            
+
             analysis_prompts = {
                 "general": "Analyze this government document and provide a comprehensive summary including key points, important dates, stakeholders, and action items.",
                 "compliance": "Analyze this document for compliance considerations including regulatory requirements, risk factors, control gaps, and remediation recommendations.",
@@ -508,9 +506,9 @@ Please let me know what specific area you'd like assistance with, and I'll provi
                 "legal": "Analyze this legal document for key legal provisions, obligations, rights, deadlines, and compliance requirements.",
                 "financial": "Analyze this financial document including budget items, expenditures, revenue sources, financial risks, and audit considerations."
             }
-            
+
             prompt = analysis_prompts.get(analysis_type, analysis_prompts["general"])
-            
+
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
                 messages=[
@@ -520,9 +518,9 @@ Please let me know what specific area you'd like assistance with, and I'll provi
                 max_tokens=self.config.openai.max_tokens,
                 temperature=0.3
             )
-            
+
             analysis_result = response.choices[0].message.content
-            
+
             return {
                 "analysis_type": analysis_type,
                 "summary": analysis_result,
@@ -530,25 +528,25 @@ Please let me know what specific area you'd like assistance with, and I'll provi
                 "content_length": len(content),
                 "model_used": self.config.openai.model
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error in document analysis: {e}")
             return self._generate_mock_document_analysis(content, analysis_type)
-    
+
     def _generate_mock_document_analysis(self, content: str, analysis_type: str) -> Dict[str, Any]:
         """Generate mock document analysis results"""
         mock_summaries = {
             "general": f"Document Summary: This appears to be a government document containing {len(content.split())} words. Key themes include policy implementation, stakeholder responsibilities, and procedural requirements. Important dates and deadlines should be reviewed for compliance.",
-            
+
             "compliance": f"Compliance Analysis: Document reviewed for regulatory compliance. Identified {len(content.split()) // 100} potential compliance points requiring attention. Recommend detailed review of control requirements and implementation timelines.",
-            
+
             "policy": f"Policy Analysis: Policy document outlines objectives and implementation framework. Contains {len(content.split())} words with focus on operational procedures and stakeholder requirements. Implementation timeline and resource allocation should be clarified.",
-            
-            "legal": f"Legal Analysis: Legal document contains contractual obligations and regulatory requirements. Key provisions identified for compliance monitoring. Recommend legal review of all obligations and deadlines.",
-            
-            "financial": f"Financial Analysis: Financial document contains budget allocations and expenditure requirements totaling references to monetary values. Audit trail and approval processes should be documented per government financial regulations."
+
+            "legal": "Legal Analysis: Legal document contains contractual obligations and regulatory requirements. Key provisions identified for compliance monitoring. Recommend legal review of all obligations and deadlines.",
+
+            "financial": "Financial Analysis: Financial document contains budget allocations and expenditure requirements totaling references to monetary values. Audit trail and approval processes should be documented per government financial regulations."
         }
-        
+
         return {
             "analysis_type": analysis_type,
             "summary": mock_summaries.get(analysis_type, mock_summaries["general"]),
@@ -556,7 +554,7 @@ Please let me know what specific area you'd like assistance with, and I'll provi
             "content_length": len(content),
             "model_used": "mock_analysis"
         }
-    
+
     async def translate_text(self, text: str, target_language: str) -> Dict[str, Any]:
         """
         Translate text to target language with government context awareness
@@ -571,7 +569,7 @@ Please let me know what specific area you'd like assistance with, and I'll provi
         try:
             if not self.async_openai_client:
                 return self._generate_mock_translation(text, target_language)
-            
+
             system_prompt = f"""You are a professional government translator specializing in official document translation. 
 
 Translate the following text to {target_language} while:
@@ -582,7 +580,7 @@ Translate the following text to {target_language} while:
 - Indicating any terms that may need cultural adaptation
 
 Provide only the translation without additional commentary."""
-            
+
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
                 messages=[
@@ -592,9 +590,9 @@ Provide only the translation without additional commentary."""
                 max_tokens=self.config.openai.max_tokens,
                 temperature=0.2  # Low temperature for accurate translation
             )
-            
+
             translated_text = response.choices[0].message.content
-            
+
             return {
                 "source_language": "auto-detected",
                 "target_language": target_language,
@@ -603,15 +601,15 @@ Provide only the translation without additional commentary."""
                 "timestamp": datetime.now().isoformat(),
                 "model_used": self.config.openai.model
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error in text translation: {e}")
             return self._generate_mock_translation(text, target_language)
-    
+
     def _generate_mock_translation(self, text: str, target_language: str) -> Dict[str, Any]:
         """Generate mock translation results"""
         mock_translation = f"[MOCK TRANSLATION TO {target_language.upper()}] {text[:200]}... (Translation service unavailable - please configure OpenAI API key for full translation capabilities)"
-        
+
         return {
             "source_language": "English",
             "target_language": target_language,
@@ -620,7 +618,7 @@ Provide only the translation without additional commentary."""
             "timestamp": datetime.now().isoformat(),
             "model_used": "mock_translator"
         }
-    
+
     async def process_citizen_query(self, query: str) -> CitizenServiceQuery:
         """
         Process and structure citizen service queries
@@ -634,11 +632,11 @@ Provide only the translation without additional commentary."""
         try:
             category = self._categorize_citizen_service(query)
             priority = self._assess_query_priority(query)
-            
+
             # Generate structured response
             if not self.async_openai_client:
                 return self._generate_mock_citizen_query(query, category, priority)
-            
+
             system_prompt = f"""Analyze this citizen service query and provide structured information:
 
 Query Category: {category}
@@ -652,7 +650,7 @@ Provide:
 5. Alternative solutions if applicable
 
 Format response as structured data."""
-            
+
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
                 messages=[
@@ -662,10 +660,10 @@ Format response as structured data."""
                 max_tokens=800,
                 temperature=0.4
             )
-            
+
             # Parse response into structured format
             response_text = response.choices[0].message.content
-            
+
             return CitizenServiceQuery(
                 query_type=category,
                 category=category,
@@ -675,25 +673,25 @@ Format response as structured data."""
                 required_documents=["Government ID", "Proof of address"],
                 estimated_processing_time="3-5 business days"
             )
-            
+
         except Exception as e:
             self.logger.error(f"Error processing citizen query: {e}")
             return self._generate_mock_citizen_query(query, "general", "normal")
-    
+
     def _assess_query_priority(self, query: str) -> str:
         """Assess priority level of citizen query"""
         query_lower = query.lower()
-        
+
         high_priority_keywords = ['emergency', 'urgent', 'immediate', 'safety', 'health', 'danger']
         if any(keyword in query_lower for keyword in high_priority_keywords):
             return "high"
-        
+
         medium_priority_keywords = ['deadline', 'expires', 'time-sensitive', 'soon']
         if any(keyword in query_lower for keyword in medium_priority_keywords):
             return "medium"
-        
+
         return "normal"
-    
+
     def _generate_mock_citizen_query(self, query: str, category: str, priority: str) -> CitizenServiceQuery:
         """Generate mock structured citizen query"""
         return CitizenServiceQuery(
@@ -709,24 +707,24 @@ Format response as structured data."""
             required_documents=["Government ID", "Supporting documentation"],
             estimated_processing_time="5-7 business days"
         )
-    
+
     def get_conversation_history(self) -> List[Dict[str, Any]]:
         """Get the current conversation history"""
         return self.conversation_history.copy()
-    
+
     async def clear_conversation_history(self):
         """Clear the conversation history"""
         self.conversation_history = []
         self.logger.info("Conversation history cleared")
-    
+
     async def get_available_modes(self) -> List[str]:
         """Get list of available assistant modes"""
         return [mode.value for mode in AssistantMode]
-    
+
     def get_current_mode(self) -> str:
         """Get current assistant mode as string"""
         return self.current_mode.value if self.current_mode else "general"
-    
+
     async def get_system_status(self) -> Dict[str, Any]:
         """Get system status information"""
         return {
@@ -736,4 +734,4 @@ Format response as structured data."""
             "conversation_length": len(self.conversation_history),
             "model": self.config.openai.model if self.async_openai_client else "mock",
             "last_interaction": datetime.now().isoformat()
-        } 
+        }

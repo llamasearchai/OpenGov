@@ -6,24 +6,21 @@ compliance automation, document processing, and emergency response.
 Author: Nik Jois
 """
 
-import asyncio
-import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Union
-import json
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File, Form
+import structlog
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, validator
-import structlog
+from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, Field
 
+from backend.ai_agents.compliance_agent import ComplianceAgent
+from backend.ai_agents.government_assistant import AssistantMode, GovernmentAssistant
+from backend.compliance.scanner import ComplianceScanner
 from backend.core.config import get_config
-from backend.ai_agents.government_assistant import GovernmentAssistant, AssistantMode
-from backend.ai_agents.compliance_agent import ComplianceAgent, ComplianceFramework
-from backend.compliance.scanner import ComplianceScanner, ScanType
 from backend.utils.system_checker import SystemChecker
 
 # Initialize configuration and logging
@@ -55,7 +52,7 @@ app.add_middleware(
 # Configure trusted hosts
 if config.is_production:
     app.add_middleware(
-        TrustedHostMiddleware, 
+        TrustedHostMiddleware,
         allowed_hosts=["*.gov", "*.mil", "localhost", "127.0.0.1"]
     )
 
@@ -190,11 +187,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # In development mode, allow requests without authentication
     if not credentials and config.is_development:
         return {"user_id": "dev_user", "roles": ["admin"], "clearance": "public"}
-    
+
     # TODO: Implement proper JWT token validation
     # For now, return mock user data
     return {
@@ -230,13 +227,13 @@ async def health_check():
             "ai_assistant": "healthy",
             "compliance_engine": "healthy"
         }
-        
+
         # Check OpenAI connectivity
         if config.openai.api_key:
             services["openai"] = "healthy"
         else:
             services["openai"] = "not_configured"
-        
+
         return HealthCheckResponse(
             status="healthy",
             timestamp=datetime.now(),
@@ -267,7 +264,7 @@ async def system_check(current_user: dict = Depends(get_current_user)):
         overall_health = await system_checker.check_all()
         results = {
             "overall_health": overall_health,
-            "status": "healthy" if overall_health else "unhealthy", 
+            "status": "healthy" if overall_health else "unhealthy",
             "checks": system_checker.check_results,
             "system_info": system_checker.get_system_info(),
             "recommendations": system_checker.get_recommendations(),
@@ -295,16 +292,16 @@ async def chat_with_assistant(
                 await government_assistant.set_mode(mode)
             except ValueError:
                 raise HTTPException(status_code=400, detail=f"Invalid mode: {request.mode}")
-        
+
         # Get response from assistant
         response = await government_assistant.chat(request.message, request.context)
-        
+
         return ChatResponse(
             response=response,
             mode=government_assistant.get_current_mode(),
             timestamp=datetime.now()
         )
-        
+
     except HTTPException:
         # Re-raise HTTP exceptions with their original status codes
         raise
@@ -321,16 +318,16 @@ async def analyze_document(
     """Analyze a document using AI"""
     try:
         result = await government_assistant.analyze_document(
-            request.content, 
+            request.content,
             request.analysis_type
         )
-        
+
         return DocumentAnalysisResponse(
             analysis_type=result["analysis_type"],
             summary=result["summary"],
             timestamp=datetime.fromisoformat(result["timestamp"])
         )
-        
+
     except Exception as e:
         logger.error("Document analysis failed", error=str(e))
         raise HTTPException(status_code=500, detail="Document analysis failed")
@@ -346,7 +343,7 @@ async def analyze_document_upload(
     try:
         # Read file content
         content = await file.read()
-        
+
         # Handle different file types
         if file.content_type == "text/plain":
             text_content = content.decode("utf-8")
@@ -355,16 +352,16 @@ async def analyze_document_upload(
             text_content = "PDF processing not yet implemented"
         else:
             raise HTTPException(status_code=400, detail="Unsupported file type")
-        
+
         # Analyze document
         result = await government_assistant.analyze_document(text_content, analysis_type)
-        
+
         return {
             "filename": file.filename,
             "content_type": file.content_type,
             "analysis": result
         }
-        
+
     except Exception as e:
         logger.error("Document upload analysis failed", error=str(e))
         raise HTTPException(status_code=500, detail="Document upload analysis failed")
@@ -381,7 +378,7 @@ async def translate_text(
             request.text,
             request.target_language
         )
-        
+
         return TranslationResponse(
             original_text=result["original_text"],
             translated_text=result["translated_text"],
@@ -389,7 +386,7 @@ async def translate_text(
             target_language=result["target_language"],
             timestamp=datetime.fromisoformat(result["timestamp"])
         )
-        
+
     except Exception as e:
         logger.error("Translation failed", error=str(e))
         raise HTTPException(status_code=500, detail="Translation failed")
@@ -410,9 +407,9 @@ async def run_compliance_scan(
             result = await compliance_scanner.run_full_scan()
         else:
             raise HTTPException(status_code=400, detail="Invalid scan type")
-        
+
         scan_id = f"scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
+
         return ComplianceScanResponse(
             scan_id=scan_id,
             scan_type=request.scan_type,
@@ -422,7 +419,7 @@ async def run_compliance_scan(
             recommendations=result.recommendations if hasattr(result, 'recommendations') else [],
             timestamp=datetime.now()
         )
-        
+
     except HTTPException:
         # Re-raise HTTP exceptions with their original status codes
         raise
@@ -450,17 +447,17 @@ async def get_compliance_controls(
                 {"id": "IA-2", "title": "Identification and Authentication", "status": "implemented"}
             ]
         }
-        
+
         framework_controls = controls.get(framework.lower(), [])
         if not framework_controls:
             raise HTTPException(status_code=404, detail="Framework not found")
-        
+
         return {
             "framework": framework,
             "controls": framework_controls,
             "total_controls": len(framework_controls)
         }
-        
+
     except HTTPException:
         # Re-raise HTTP exceptions with their original status codes
         raise
@@ -489,7 +486,7 @@ async def assess_compliance_control(
             "assessment": assessment,
             "timestamp": datetime.now()
         }
-        
+
     except Exception as e:
         logger.error("Control assessment failed", error=str(e))
         raise HTTPException(status_code=500, detail="Control assessment failed")
@@ -506,12 +503,12 @@ async def submit_citizen_request(
     try:
         # Set assistant to citizen service mode
         await government_assistant.set_mode(AssistantMode.CITIZEN_SERVICE)
-        
+
         # Process the request
         response = await government_assistant.chat(request.query)
-        
+
         request_id = f"req_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
+
         return CitizenServiceResponse(
             request_id=request_id,
             response=response,
@@ -521,7 +518,7 @@ async def submit_citizen_request(
             next_steps=["Review request", "Contact citizen if needed", "Process application"],
             timestamp=datetime.now()
         )
-        
+
     except Exception as e:
         logger.error("Citizen request processing failed", error=str(e))
         raise HTTPException(status_code=500, detail="Citizen request processing failed")
@@ -557,13 +554,13 @@ async def report_emergency_incident(
     try:
         # Set assistant to emergency response mode
         await government_assistant.set_mode(AssistantMode.EMERGENCY_RESPONSE)
-        
+
         # Generate response plan
         query = f"Emergency incident: {request.incident_type}, Severity: {request.severity}, Description: {request.description}"
         response_plan = await government_assistant.chat(query)
-        
+
         incident_id = f"inc_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
+
         return EmergencyResponseResponse(
             incident_id=incident_id,
             response_plan=response_plan,
@@ -587,7 +584,7 @@ async def report_emergency_incident(
             estimated_timeline="Initial response: 15-30 minutes",
             timestamp=datetime.now()
         )
-        
+
     except Exception as e:
         logger.error("Emergency incident processing failed", error=str(e))
         raise HTTPException(status_code=500, detail="Emergency incident processing failed")
@@ -610,7 +607,7 @@ async def get_system_statistics(current_user: dict = Depends(get_current_user)):
             "last_updated": datetime.now()
         }
         return stats
-        
+
     except Exception as e:
         logger.error("Failed to retrieve statistics", error=str(e))
         raise HTTPException(status_code=500, detail="Failed to retrieve statistics")
@@ -628,14 +625,14 @@ async def trigger_system_maintenance(current_user: dict = Depends(get_current_us
             "Archive old logs",
             "Run system health checks"
         ]
-        
+
         return {
             "status": "maintenance_scheduled",
             "tasks": maintenance_tasks,
             "estimated_duration": "30 minutes",
             "scheduled_time": datetime.now() + timedelta(hours=1)
         }
-        
+
     except Exception as e:
         logger.error("Maintenance scheduling failed", error=str(e))
         raise HTTPException(status_code=500, detail="Maintenance scheduling failed")
@@ -645,11 +642,11 @@ async def trigger_system_maintenance(current_user: dict = Depends(get_current_us
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     """Handle HTTP exceptions"""
-    logger.error("HTTP exception occurred", 
-                status_code=exc.status_code, 
+    logger.error("HTTP exception occurred",
+                status_code=exc.status_code,
                 detail=exc.detail,
                 path=request.url.path)
-    
+
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -666,10 +663,10 @@ async def http_exception_handler(request, exc):
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     """Handle general exceptions"""
-    logger.error("Unexpected exception occurred", 
+    logger.error("Unexpected exception occurred",
                 error=str(exc),
                 path=request.url.path)
-    
+
     return JSONResponse(
         status_code=500,
         content={
@@ -706,4 +703,4 @@ if __name__ == "__main__":
         port=8000,
         reload=config.debug,
         log_level="debug" if config.debug else "info"
-    ) 
+    )

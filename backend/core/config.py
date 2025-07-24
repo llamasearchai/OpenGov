@@ -6,12 +6,10 @@ Author: Nik Jois
 """
 
 import os
-import logging
-from typing import Dict, List, Optional, Any, Union
-from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
-import json
+from typing import Dict, List, Optional
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -25,7 +23,7 @@ class OpenAIModelType(Enum):
     GPT_4O = "gpt-4o"
     GPT_4O_AUDIO = "gpt-4o-audio-preview"
     CHATGPT_4O_LATEST = "chatgpt-4o-latest"
-    
+
     # Reasoning models (o-series)
     O4_MINI = "o4-mini"
     O3 = "o3"
@@ -34,13 +32,13 @@ class OpenAIModelType(Enum):
     O1 = "o1"
     O1_MINI = "o1-mini"
     O1_PRO = "o1-pro"
-    
+
     # Cost-optimized models
     GPT_4_1_MINI = "gpt-4.1-mini"
     GPT_4_1_NANO = "gpt-4.1-nano"
     GPT_4O_MINI = "gpt-4o-mini"
     GPT_4O_MINI_AUDIO = "gpt-4o-mini-audio-preview"
-    
+
     # Legacy models (for backward compatibility)
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4 = "gpt-4"
@@ -81,27 +79,27 @@ class OpenAIConfig:
     api_key: str = ""
     organization: Optional[str] = None
     base_url: str = "https://api.openai.com/v1"
-    
+
     # Default models for different use cases
     default_model: str = "gpt-4.1"
     reasoning_model: str = "o3"
     cost_optimized_model: str = "gpt-4.1-mini"
     audio_model: str = "gpt-4o-audio-preview"
-    
+
     # Model configurations
     models: Dict[str, ModelConfig] = field(default_factory=dict)
-    
+
     # API settings
     max_tokens: int = 4096
     temperature: float = 0.7
     timeout: int = 60
     max_retries: int = 3
-    
+
     def __post_init__(self):
         """Initialize model configurations"""
         if not self.models:
             self.models = self._get_default_model_configs()
-    
+
     def _get_default_model_configs(self) -> Dict[str, ModelConfig]:
         """Get default configurations for all supported models"""
         return {
@@ -154,7 +152,7 @@ class OpenAIConfig:
                 cost_per_1k_output=0.05,
                 recommended_use_cases=["Interactive chat", "Q&A systems", "Help desk automation"]
             ),
-            
+
             # Reasoning models (o-series)
             "o4-mini": ModelConfig(
                 name="o4-mini",
@@ -244,7 +242,7 @@ class OpenAIConfig:
                 cost_per_1k_output=0.12,
                 recommended_use_cases=["Legacy high-performance tasks"]
             ),
-            
+
             # Cost-optimized models
             "gpt-4.1-mini": ModelConfig(
                 name="gpt-4.1-mini",
@@ -294,28 +292,28 @@ class OpenAIConfig:
                 recommended_use_cases=["Voice interfaces", "Audio processing", "Cost-effective speech"]
             )
         }
-    
+
     def get_model_by_capability(self, capability: ModelCapability) -> List[str]:
         """Get models that support a specific capability"""
         return [
             model_name for model_name, config in self.models.items()
             if capability in config.capabilities and config.government_approved
         ]
-    
+
     def get_reasoning_models(self) -> List[str]:
         """Get all reasoning-capable models"""
         return [
             model_name for model_name, config in self.models.items()
             if config.reasoning_capable and config.government_approved
         ]
-    
+
     def get_audio_models(self) -> List[str]:
         """Get all audio-capable models"""
         return [
             model_name for model_name, config in self.models.items()
             if config.audio_capable and config.government_approved
         ]
-    
+
     def get_cost_optimized_models(self) -> List[str]:
         """Get cost-optimized models sorted by cost"""
         cost_models = [
@@ -323,11 +321,11 @@ class OpenAIConfig:
             if config.cost_per_1k_input <= 0.02 and config.government_approved
         ]
         return [model[0] for model in sorted(cost_models, key=lambda x: x[1].cost_per_1k_input)]
-    
+
     def get_model_for_use_case(self, use_case: str) -> Optional[str]:
         """Get recommended model for specific use case"""
         use_case_lower = use_case.lower()
-        
+
         # Use case to model mapping
         use_case_mappings = {
             "reasoning": self.reasoning_model,
@@ -340,46 +338,46 @@ class OpenAIConfig:
             "translation": "gpt-4o",
             "documents": "gpt-4.1"
         }
-        
+
         for key, model in use_case_mappings.items():
             if key in use_case_lower:
                 return model
-        
+
         return self.default_model
 
 
 @dataclass
 class Config:
     """Main configuration class combining all settings"""
-    
+
     # Core application settings
     app_name: str = "GovSecure AI Platform"
     version: str = "1.0.0"
     environment: str = "development"
     debug: bool = False
-    
+
     # OpenAI configuration
     openai: OpenAIConfig = field(default_factory=OpenAIConfig)
-    
+
     # Security settings
     secret_key: str = "your-super-secret-key-change-in-production"
-    
+
     # Database settings
     database_url: str = "sqlite:///./govsecure.db"
-    
+
     # API settings
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    
+
     # Compliance settings
     compliance_level: str = "FEDRAMP_HIGH"
-    
+
     def __post_init__(self):
         """Initialize configuration from environment variables"""
         # Load OpenAI configuration from environment
         api_key = os.getenv("OPENAI_API_KEY", "")
         organization = os.getenv("OPENAI_ORGANIZATION")
-        
+
         if api_key:
             self.openai = OpenAIConfig(
                 api_key=api_key,
@@ -388,7 +386,7 @@ class Config:
         else:
             # Create default config for development/testing
             self.openai = OpenAIConfig()
-        
+
         # Load other environment variables
         self.debug = os.getenv("DEBUG", "false").lower() == "true"
         self.environment = os.getenv("ENVIRONMENT", "development")
@@ -396,17 +394,17 @@ class Config:
         self.api_host = os.getenv("API_HOST", self.api_host)
         self.api_port = int(os.getenv("API_PORT", str(self.api_port)))
         self.secret_key = os.getenv("SECRET_KEY", self.secret_key)
-    
+
     @property
     def is_development(self) -> bool:
         """Check if running in development mode"""
         return self.environment.lower() == "development"
-    
+
     @property
     def is_production(self) -> bool:
         """Check if running in production mode"""
         return self.environment.lower() == "production"
-    
+
     @property
     def is_testing(self) -> bool:
         """Check if running in testing mode"""
@@ -429,4 +427,4 @@ def reload_config() -> Config:
     """Reload the configuration from environment"""
     global _config
     _config = Config()
-    return _config 
+    return _config

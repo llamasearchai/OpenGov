@@ -3,8 +3,9 @@ Setup script for GovSecure AI Platform
 Author: Nik Jois
 """
 
-from setuptools import setup, find_packages
 import os
+
+from setuptools import find_packages, setup
 
 # Read the contents of README file
 this_directory = os.path.abspath(os.path.dirname(__file__))
@@ -88,9 +89,9 @@ setup(
         "": ["*.md", "*.txt", "*.cfg", "*.ini"],
     },
     keywords=[
-        "government", "ai", "openai", "gpt-4", "compliance", "fedramp", "nist", 
+        "government", "ai", "openai", "gpt-4", "compliance", "fedramp", "nist",
         "security", "automation", "dspy", "reasoning", "audio", "translation",
         "policy", "analysis", "risk", "assessment", "citizen", "services"
     ],
     zip_safe=False,
-) 
+)

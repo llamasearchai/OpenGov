@@ -9,11 +9,10 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
-import openai
-from openai import OpenAI, AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI
 from pydantic import BaseModel
 
 from backend.core.config import get_config
@@ -66,11 +65,11 @@ class ComplianceAgent:
     AI Agent specialized for government compliance automation.
     Provides NIST 800-53, FedRAMP, and other compliance assessments using OpenAI.
     """
-    
+
     def __init__(self):
         self.config = get_config()
         self.logger = logging.getLogger(__name__)
-        
+
         # Initialize OpenAI clients
         try:
             self.openai_client = OpenAI(api_key=self.config.openai.api_key)
@@ -79,15 +78,15 @@ class ComplianceAgent:
             self.logger.error(f"Failed to initialize OpenAI client: {e}")
             self.openai_client = None
             self.async_openai_client = None
-        
+
         self.compliance_knowledge = self._load_compliance_knowledge()
-        
+
     def _load_compliance_knowledge(self) -> Dict[str, Any]:
         """Load compliance framework knowledge base."""
         return {
             "nist_800_53_families": {
                 "AC": "Access Control",
-                "AT": "Awareness and Training", 
+                "AT": "Awareness and Training",
                 "AU": "Audit and Accountability",
                 "CA": "Assessment, Authorization, and Monitoring",
                 "CM": "Configuration Management",
@@ -128,8 +127,8 @@ class ComplianceAgent:
                 "SI-1", "SI-2", "SI-3", "SI-4", "SI-5", "SI-7", "SI-8", "SI-10", "SI-11", "SI-12", "SI-16"
             ]
         }
-    
-    async def assess_control(self, control_id: str, system_description: str, 
+
+    async def assess_control(self, control_id: str, system_description: str,
                            implementation_details: str, framework: ComplianceFramework = ComplianceFramework.NIST_800_53) -> ComplianceAssessment:
         """
         Assess a specific security control using AI.
@@ -145,7 +144,7 @@ class ComplianceAgent:
         """
         if not self.async_openai_client:
             return await self._mock_control_assessment(control_id, framework)
-        
+
         prompt = f"""As a federal compliance expert, assess the implementation of security control {control_id} 
 according to {framework.value} requirements.
 
@@ -164,7 +163,7 @@ Please provide:
 6. Estimated remediation timeline if gaps exist
 
 Be specific about compliance requirements and cite relevant control language where applicable."""
-        
+
         try:
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
@@ -175,15 +174,15 @@ Be specific about compliance requirements and cite relevant control language whe
                 max_tokens=self.config.openai.max_tokens,
                 temperature=0.1
             )
-            
+
             assessment_text = response.choices[0].message.content
-            
+
             # Parse AI response to extract structured data
             parsed_assessment = await self._parse_assessment_response(control_id, assessment_text, framework)
-            
+
             self.logger.info(f"Completed compliance assessment for control {control_id}")
             return parsed_assessment
-            
+
         except Exception as e:
             self.logger.error(f"Error in control assessment: {e}")
             return ComplianceAssessment(
@@ -193,11 +192,11 @@ Be specific about compliance requirements and cite relevant control language whe
                 status=ControlStatus.NOT_IMPLEMENTED,
                 risk_level=RiskLevel.HIGH,
                 assessment_date=datetime.now(),
-                findings=[f"Assessment failed due to technical error: {str(e)}"],
+                findings=[f"Assessment failed due to technical error: {e!s}"],
                 recommendations=["Retry assessment when technical issues are resolved"],
                 evidence_required=["Manual assessment required"]
             )
-    
+
     async def bulk_assess_controls(self, control_list: List[str], system_description: str,
                                  framework: ComplianceFramework = ComplianceFramework.NIST_800_53) -> List[ComplianceAssessment]:
         """
@@ -212,13 +211,13 @@ Be specific about compliance requirements and cite relevant control language whe
             List of ComplianceAssessment objects
         """
         assessments = []
-        
+
         # Process controls in batches to avoid API limits
         batch_size = 5
         for i in range(0, len(control_list), batch_size):
             batch = control_list[i:i + batch_size]
             batch_tasks = []
-            
+
             for control_id in batch:
                 task = self.assess_control(
                     control_id=control_id,
@@ -227,22 +226,22 @@ Be specific about compliance requirements and cite relevant control language whe
                     framework=framework
                 )
                 batch_tasks.append(task)
-            
+
             # Execute batch concurrently
             batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-            
+
             for result in batch_results:
                 if isinstance(result, ComplianceAssessment):
                     assessments.append(result)
                 else:
                     self.logger.error(f"Batch assessment error: {result}")
-            
+
             # Brief pause between batches
             await asyncio.sleep(1)
-        
+
         return assessments
-    
-    async def generate_compliance_report(self, system_id: str, controls: List[str], 
+
+    async def generate_compliance_report(self, system_id: str, controls: List[str],
                                        framework: ComplianceFramework) -> Dict[str, Any]:
         """
         Generate comprehensive compliance report.
@@ -276,7 +275,7 @@ Be specific about compliance requirements and cite relevant control language whe
                 "generated_at": datetime.now().isoformat(),
                 "report_version": "1.0"
             }
-        
+
         # Implementation would use OpenAI for detailed analysis
         return {
             "system_id": system_id,
@@ -286,7 +285,7 @@ Be specific about compliance requirements and cite relevant control language whe
             "compliance_status": "SUBSTANTIAL_COMPLIANCE"
         }
 
-    async def perform_gap_analysis(self, current_controls: List[str], 
+    async def perform_gap_analysis(self, current_controls: List[str],
                                  required_controls: List[str],
                                  framework: ComplianceFramework) -> Dict[str, Any]:
         """
@@ -302,9 +301,9 @@ Be specific about compliance requirements and cite relevant control language whe
         """
         missing_controls = [ctrl for ctrl in required_controls if ctrl not in current_controls]
         extra_controls = [ctrl for ctrl in current_controls if ctrl not in required_controls]
-        
+
         gap_percentage = (len(missing_controls) / len(required_controls)) * 100 if required_controls else 0
-        
+
         return {
             "framework": framework.value,
             "missing_controls": missing_controls,
@@ -341,16 +340,16 @@ Be specific about compliance requirements and cite relevant control language whe
                 "low_risk_items": [],
                 "total_vulnerabilities": 0
             }
-        
+
         high_risk = [v for v in vulnerabilities if v.get("severity", "").upper() == "HIGH"]
         medium_risk = [v for v in vulnerabilities if v.get("severity", "").upper() == "MEDIUM"]
         low_risk = [v for v in vulnerabilities if v.get("severity", "").upper() == "LOW"]
-        
+
         # Calculate risk score (weighted)
         risk_score = (len(high_risk) * 10) + (len(medium_risk) * 5) + (len(low_risk) * 1)
         max_possible = len(vulnerabilities) * 10
         risk_percentage = (risk_score / max_possible * 100) if max_possible > 0 else 0
-        
+
         return {
             "overall_risk_score": risk_percentage,
             "risk_level": "HIGH" if risk_percentage > 70 else "MEDIUM" if risk_percentage > 30 else "LOW",
@@ -383,30 +382,30 @@ Be specific about compliance requirements and cite relevant control language whe
         control_id = control_details.get("control_id", "UNKNOWN")
         implementation = control_details.get("implementation", "")
         evidence = control_details.get("evidence", [])
-        
+
         # Simple validation logic
         validation_score = 0
         validation_issues = []
-        
+
         if implementation and len(implementation) > 20:
             validation_score += 40
         else:
             validation_issues.append("Implementation description is too brief")
-        
+
         if evidence and len(evidence) > 0:
             validation_score += 30
         else:
             validation_issues.append("No evidence provided")
-        
+
         # Additional validation checks
         if any(keyword in implementation.lower() for keyword in ["policy", "procedure", "documentation"]):
             validation_score += 20
-        
+
         if any(keyword in implementation.lower() for keyword in ["automated", "monitoring", "audit"]):
             validation_score += 10
-        
+
         is_compliant = validation_score >= 70
-        
+
         return {
             "control_id": control_id,
             "is_compliant": is_compliant,
@@ -421,7 +420,7 @@ Be specific about compliance requirements and cite relevant control language whe
                 "Include automated controls where possible" if "automated" not in implementation.lower() else ""
             ]
         }
-    
+
     async def validate_system_configuration(self, config_data: Dict[str, Any],
                                           framework: ComplianceFramework = ComplianceFramework.NIST_800_53) -> Dict[str, Any]:
         """
@@ -436,9 +435,9 @@ Be specific about compliance requirements and cite relevant control language whe
         """
         if not self.async_openai_client:
             return await self._mock_config_validation(config_data, framework)
-        
+
         config_json = json.dumps(config_data, indent=2)
-        
+
         prompt = f"""Analyze the following system configuration for {framework.value} compliance:
 
 Configuration Data:
@@ -453,7 +452,7 @@ Please assess:
 6. Data protection measures
 
 Identify any non-compliant configurations and provide specific remediation steps."""
-        
+
         try:
             response = await self.async_openai_client.chat.completions.create(
                 model=self.config.openai.model,
@@ -464,9 +463,9 @@ Identify any non-compliant configurations and provide specific remediation steps
                 max_tokens=self.config.openai.max_tokens,
                 temperature=0.1
             )
-            
+
             validation_result = response.choices[0].message.content
-            
+
             return {
                 "framework": framework.value,
                 "validation_date": datetime.now().isoformat(),
@@ -480,15 +479,15 @@ Identify any non-compliant configurations and provide specific remediation steps
                     "Schedule regular configuration reviews"
                 ]
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error in configuration validation: {e}")
             return {
-                "error": f"Validation failed: {str(e)}",
+                "error": f"Validation failed: {e!s}",
                 "framework": framework.value,
                 "validation_date": datetime.now().isoformat()
             }
-    
+
     def get_control_guidance(self, control_id: str, framework: ComplianceFramework = ComplianceFramework.NIST_800_53) -> Dict[str, Any]:
         """Get implementation guidance for a specific control."""
         guidance_templates = {
@@ -527,31 +526,31 @@ Identify any non-compliant configurations and provide specific remediation steps
                 ]
             }
         }
-        
+
         return guidance_templates.get(control_id, {
             "title": f"Control {control_id}",
             "description": f"Implementation guidance for {control_id}",
             "implementation_guidance": ["Consult NIST 800-53 for detailed guidance"],
             "common_evidence": ["Control implementation documentation"]
         })
-    
-    async def _parse_assessment_response(self, control_id: str, response_text: str, 
+
+    async def _parse_assessment_response(self, control_id: str, response_text: str,
                                        framework: ComplianceFramework) -> ComplianceAssessment:
         """Parse AI assessment response into structured format."""
         # Simple parsing logic - in production, this would be more sophisticated
         findings = []
         recommendations = []
         evidence_required = []
-        
+
         lines = response_text.split('\n')
         current_section = None
-        
+
         for line in lines:
             line = line.strip()
             if 'finding' in line.lower() or 'gap' in line.lower():
                 current_section = 'findings'
             elif 'recommendation' in line.lower():
-                current_section = 'recommendations'  
+                current_section = 'recommendations'
             elif 'evidence' in line.lower():
                 current_section = 'evidence'
             elif line and current_section:
@@ -561,11 +560,11 @@ Identify any non-compliant configurations and provide specific remediation steps
                     recommendations.append(line)
                 elif current_section == 'evidence':
                     evidence_required.append(line)
-        
+
         # Determine status and risk from response text
         status = ControlStatus.NOT_IMPLEMENTED
         risk_level = RiskLevel.MEDIUM
-        
+
         if 'implemented' in response_text.lower():
             if 'partially' in response_text.lower():
                 status = ControlStatus.PARTIALLY_IMPLEMENTED
@@ -575,14 +574,14 @@ Identify any non-compliant configurations and provide specific remediation steps
             status = ControlStatus.PLANNED
         elif 'not applicable' in response_text.lower():
             status = ControlStatus.NOT_APPLICABLE
-        
+
         if 'critical' in response_text.lower():
             risk_level = RiskLevel.CRITICAL
         elif 'high' in response_text.lower():
             risk_level = RiskLevel.HIGH
         elif 'low' in response_text.lower():
             risk_level = RiskLevel.LOW
-        
+
         return ComplianceAssessment(
             control_id=control_id,
             control_name=f"Control {control_id}",
@@ -594,35 +593,35 @@ Identify any non-compliant configurations and provide specific remediation steps
             recommendations=recommendations if recommendations else ["No specific recommendations"],
             evidence_required=evidence_required if evidence_required else ["Standard control documentation"]
         )
-    
+
     def _get_key_findings(self, assessments: List[ComplianceAssessment]) -> str:
         """Extract key findings from assessments."""
         critical_findings = [a for a in assessments if a.risk_level == RiskLevel.CRITICAL]
         high_findings = [a for a in assessments if a.risk_level == RiskLevel.HIGH]
-        
+
         findings_text = ""
         if critical_findings:
             findings_text += f"Critical Issues ({len(critical_findings)} controls): "
             findings_text += ", ".join([a.control_id for a in critical_findings[:5]])
-            
+
         if high_findings:
             findings_text += f"\nHigh Risk Issues ({len(high_findings)} controls): "
             findings_text += ", ".join([a.control_id for a in high_findings[:5]])
-            
+
         return findings_text
-    
+
     def _get_prioritized_recommendations(self, assessments: List[ComplianceAssessment]) -> List[str]:
         """Get prioritized recommendations from assessments."""
         recommendations = []
-        
+
         # Prioritize by risk level
         for risk in [RiskLevel.CRITICAL, RiskLevel.HIGH, RiskLevel.MEDIUM]:
             risk_assessments = [a for a in assessments if a.risk_level == risk]
             for assessment in risk_assessments[:3]:  # Top 3 per risk level
                 recommendations.extend(assessment.recommendations)
-        
+
         return list(set(recommendations))  # Remove duplicates
-    
+
     def _get_next_steps(self, assessments: List[ComplianceAssessment]) -> List[str]:
         """Generate next steps based on assessments."""
         next_steps = [
@@ -632,13 +631,13 @@ Identify any non-compliant configurations and provide specific remediation steps
             "Schedule regular compliance reviews",
             "Update system documentation"
         ]
-        
+
         not_implemented = len([a for a in assessments if a.status == ControlStatus.NOT_IMPLEMENTED])
         if not_implemented > 0:
             next_steps.insert(0, f"Implement {not_implemented} outstanding controls")
-        
+
         return next_steps
-    
+
     async def analyze_regulatory_document(self, document: str) -> Dict[str, Any]:
         """
         Analyze regulatory documents for compliance implications.
@@ -664,7 +663,7 @@ Identify any non-compliant configurations and provide specific remediation steps
                 "risk_level": "MEDIUM",
                 "document_type": "regulatory"
             }
-        
+
         try:
             response = await self.async_openai_client.chat.completions.create(
                 model="gpt-4",
@@ -675,7 +674,7 @@ Identify any non-compliant configurations and provide specific remediation steps
                 max_tokens=1000,
                 temperature=0.3
             )
-            
+
             return {
                 "analysis": response.choices[0].message.content,
                 "compliance_issues": ["AI-generated compliance analysis"],
@@ -692,12 +691,12 @@ Identify any non-compliant configurations and provide specific remediation steps
                 "risk_level": "HIGH",
                 "document_type": "regulatory"
             }
-    
+
     # Mock methods for development/testing
     async def _mock_control_assessment(self, control_id: str, framework: ComplianceFramework) -> ComplianceAssessment:
         """Mock control assessment for development."""
         await asyncio.sleep(1)
-        
+
         return ComplianceAssessment(
             control_id=control_id,
             control_name=f"Mock Control {control_id}",
@@ -709,12 +708,12 @@ Identify any non-compliant configurations and provide specific remediation steps
             recommendations=[f"Implement missing components for {control_id}", "Update documentation"],
             evidence_required=[f"Documentation for {control_id}", "Configuration evidence"]
         )
-    
-    async def _mock_compliance_report(self, assessments: List[ComplianceAssessment], 
+
+    async def _mock_compliance_report(self, assessments: List[ComplianceAssessment],
                                     system_name: str, framework: ComplianceFramework) -> Dict[str, Any]:
         """Mock compliance report generation."""
         await asyncio.sleep(2)
-        
+
         return {
             "report_metadata": {
                 "system_name": system_name,
@@ -731,12 +730,12 @@ Identify any non-compliant configurations and provide specific remediation steps
             "recommendations": ["Address high-risk findings", "Complete implementation gaps", "Improve documentation"],
             "next_steps": ["Create remediation plan", "Schedule follow-up assessment"]
         }
-    
-    async def _mock_config_validation(self, config_data: Dict[str, Any], 
+
+    async def _mock_config_validation(self, config_data: Dict[str, Any],
                                     framework: ComplianceFramework) -> Dict[str, Any]:
         """Mock configuration validation."""
         await asyncio.sleep(1)
-        
+
         return {
             "framework": framework.value,
             "validation_date": datetime.now().isoformat(),
@@ -748,4 +747,4 @@ Identify any non-compliant configurations and provide specific remediation steps
                 "Update access control settings",
                 "Improve logging configuration"
             ]
-        } 
+        }
